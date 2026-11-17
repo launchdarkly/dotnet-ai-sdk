@@ -112,6 +112,15 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         }
 
         [Fact]
+        public async Task OptionsWithoutAClientOrFactoryAreRefused()
+        {
+            await SetUpAsync();
+            var ex = await Assert.ThrowsAsync<System.ArgumentException>(() =>
+                ChatClientMessages.InvokeAsync(Fixtures.ConfigKey, "hi", Fixtures.UserContext, new ChatClientMessagesOptions()));
+            Assert.Equal("options", ex.ParamName);
+        }
+
+        [Fact]
         public async Task ClientFactoryIsUsed()
         {
             await SetUpAsync();
