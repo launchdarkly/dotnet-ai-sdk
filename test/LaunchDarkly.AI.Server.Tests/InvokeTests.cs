@@ -81,6 +81,16 @@ namespace LaunchDarkly.AI.Server.Tests
         }
 
         [Fact]
+        public async Task CallerSuppliedVariationNeverReachesAHandlerWithCaptureOff()
+        {
+            SetVariation();
+            var noCapture = LdAi.CreateHandler(new ProvidesFor("OpenAI", HandlerModes.Messages), Returning("ok"),
+                new CreateHandlerOptions { CaptureContent = false });
+            await InvokeAsync(noCapture, variables: new Dictionary<string, object?> { ["__ldValue"] = "from the caller" });
+            Assert.False(Assert.Single(Calls).Variables.ContainsKey("__ldValue"));
+        }
+
+        [Fact]
         public async Task HandlerReceivesTheEvaluatedVariationOnlyWhenCaptureIsOn()
         {
             SetVariation();

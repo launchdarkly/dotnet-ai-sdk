@@ -92,6 +92,23 @@ namespace LaunchDarkly.AI.Server.Tests
         }
 
         [Fact]
+        public async Task InvocationThatFailsBeforeTheHandlerDoesNotLatchTheLock()
+        {
+            var fake = UseFakeClient();
+            var disabled = Fixtures.EnabledConfigJson();
+            disabled["_ldMeta"]!["enabled"] = false;
+            fake.Variations[Fixtures.ConfigKey] = Fixtures.ToLdValue(disabled);
+            await Assert.ThrowsAsync<AiConfigDisabledException>(() =>
+                LdAi.Config(new ConfigArgs { Key = Fixtures.ConfigKey, Handler = Handler() }).InvokeAsync("hi", Fixtures.UserContext));
+
+            fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig(provider: "Anthropic");
+            await Assert.ThrowsAsync<NoHandlerException>(() =>
+                LdAi.Config(new ConfigArgs { Key = Fixtures.ConfigKey, Handler = Handler() }).InvokeAsync("hi", Fixtures.UserContext));
+
+            LdAi.Configure(new SdkOptions { CaptureContent = false });
+        }
+
+        [Fact]
         public async Task InspectConfigDoesNotLatchTheLock()
         {
             var fake = UseFakeClient();
