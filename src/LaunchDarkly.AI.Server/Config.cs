@@ -6,7 +6,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using LaunchDarkly.AI.Server.Internal;
-using LaunchDarkly.Logging;
 using LaunchDarkly.Sdk;
 using LaunchDarkly.Sdk.Server.Interfaces;
 
@@ -219,45 +218,12 @@ namespace LaunchDarkly.AI.Server
         {
             try
             {
-                client.Track(ToolCallEvent, context, TrackDataValue(trackData with { ToolKey = toolKey }), 1);
+                InvokeTracking.Track(client, ToolCallEvent, context, InvokeTracking.ToEventData(trackData with { ToolKey = toolKey }), 1);
             }
             catch (Exception e)
             {
-                Logger.WithAdapter(TestHooks.LogAdapter ?? Logs.Default, "LaunchDarkly.AI")
-                    .Warn("Could not track a tool call: {0}", e.Message);
+                SdkLog.Logger.Warn("Could not track a tool call: {0}", e.Message);
             }
-        }
-
-        private static LdValue TrackDataValue(TrackData data)
-        {
-            var builder = LdValue.BuildObject()
-                .Add("runId", data.RunId)
-                .Add("configKey", data.ConfigKey)
-                .Add("variationKey", data.VariationKey)
-                .Add("version", data.Version)
-                .Add("modelName", data.ModelName)
-                .Add("providerName", data.ProviderName);
-            if (data.GraphKey != null)
-            {
-                builder.Add("graphKey", data.GraphKey);
-            }
-
-            if (data.ToolKey != null)
-            {
-                builder.Add("toolKey", data.ToolKey);
-            }
-
-            if (data.ModelKey != null)
-            {
-                builder.Add("modelKey", data.ModelKey);
-            }
-
-            if (data.ModelVersion is long modelVersion)
-            {
-                builder.Add("modelVersion", modelVersion);
-            }
-
-            return builder.Build();
         }
 
         private static JsonElement ToJsonElement(LdValue value)

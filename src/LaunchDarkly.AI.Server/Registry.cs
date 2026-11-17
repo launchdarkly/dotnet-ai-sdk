@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using LaunchDarkly.AI.Server.Internal;
-using LaunchDarkly.Logging;
 
 namespace LaunchDarkly.AI.Server
 {
@@ -120,7 +119,7 @@ namespace LaunchDarkly.AI.Server
 
             if (warnings.Count > 0)
             {
-                var log = Log;
+                var log = SdkLog.Logger;
                 foreach (var warning in warnings)
                 {
                     log.Warn(warning);
@@ -178,8 +177,6 @@ namespace LaunchDarkly.AI.Server
 
             return result;
         }
-
-        private static Logger Log => Logger.WithAdapter(TestHooks.LogAdapter ?? Logs.Default, "LaunchDarkly.AI");
 
         /// <summary>
         /// A handler's registration identity: provider, normalized mode and, for a wildcard, the
