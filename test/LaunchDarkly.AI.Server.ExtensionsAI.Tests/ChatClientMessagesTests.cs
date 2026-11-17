@@ -103,6 +103,15 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         }
 
         [Fact]
+        public async Task WithoutOptionsTheCallIsRefused()
+        {
+            await SetUpAsync();
+            var ex = await Assert.ThrowsAsync<System.ArgumentException>(() =>
+                ChatClientMessages.InvokeAsync(Fixtures.ConfigKey, "hi", Fixtures.UserContext));
+            Assert.Equal("options", ex.ParamName);
+        }
+
+        [Fact]
         public async Task ClientFactoryIsUsed()
         {
             await SetUpAsync();
