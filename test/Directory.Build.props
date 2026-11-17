@@ -1,0 +1,28 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <!-- Settings for the xUnit test projects under test/. -->
+
+  <PropertyGroup>
+    <!-- TESTFRAMEWORK lets CI run one target framework at a time, for example TESTFRAMEWORK=net8.0.
+         .NET Framework 4.6.2 is tested on Windows only, through the netstandard2.0 build. -->
+    <TestFrameworks Condition="'$(TESTFRAMEWORK)' == '' And '$(OS)' == 'Windows_NT'">net8.0;net10.0;net462</TestFrameworks>
+    <TestFrameworks Condition="'$(TESTFRAMEWORK)' == '' And '$(OS)' != 'Windows_NT'">net8.0;net10.0</TestFrameworks>
+    <TestFrameworks Condition="'$(TESTFRAMEWORK)' != ''">$(TESTFRAMEWORK)</TestFrameworks>
+    <TargetFrameworks>$(TestFrameworks)</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Test method names describe behaviour with underscores. -->
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

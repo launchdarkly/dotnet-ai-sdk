@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>LaunchDarkly.AI.Server.Tests</AssemblyName>
+    <RootNamespace>LaunchDarkly.AI.Server.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\LaunchDarkly.AI.Server\LaunchDarkly.AI.Server.csproj" />
+  </ItemGroup>
+</Project>

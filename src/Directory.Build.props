@@ -1,0 +1,50 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <!-- Settings for the shipped libraries under src/. -->
+
+  <PropertyGroup>
+    <!-- BUILDFRAMEWORKS lets CI or a developer build a single target framework, for example
+         BUILDFRAMEWORKS=net8.0, without the SDK seeing the others. -->
+    <BuildFrameworks Condition="'$(BUILDFRAMEWORKS)' == ''">netstandard2.0;net8.0;net10.0</BuildFrameworks>
+    <TargetFrameworks>$(BUILDFRAMEWORKS)</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <IsPackable>true</IsPackable>
+
+    <!-- XML docs on every public member; these warnings fail the build even if
+         TreatWarningsAsErrors is turned off locally. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <WarningsAsErrors>$(WarningsAsErrors);1570;1571;1572;1573;1574;1580;1581;1584;1591;1710;1711;1712</WarningsAsErrors>
+
+    <!-- Packaging -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>launchdarkly;ai;llm;ai-configs;feature-flags</PackageTags>
+
+    <!-- SourceLink is built into the .NET SDK (8.0 and later) for GitHub remotes;
+         these settings make the published PDBs point at the exact commit. -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+    <!-- Copies dependency assemblies next to the build output so docfx can resolve them.
+         It does not change what goes into the NuGet package. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <!-- Strong naming. Release builds are strong-named with the shared LaunchDarkly key.
+       CI's release job fetches LaunchDarkly.snk into the repository root before building.
+       Without that file (a developer machine, or a pull-request build), Release builds are
+       public-signed with LaunchDarkly.pk, so the assembly identity and public key token are
+       the same as the published build. Debug builds are not strong-named. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' And Exists('$(MSBuildThisFileDirectory)../LaunchDarkly.snk')">
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)../LaunchDarkly.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' And !Exists('$(MSBuildThisFileDirectory)../LaunchDarkly.snk')">
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)../LaunchDarkly.pk</AssemblyOriginatorKeyFile>
+    <PublicSign>true</PublicSign>
+  </PropertyGroup>
+</Project>
