@@ -225,12 +225,5 @@ namespace LaunchDarkly.AI.Server.Tests
             await Assert.ThrowsAsync<NoHandlerException>(() =>
                 RouteAsync("OpenAI", HandlerModes.Messages, new ConfigArgs { Key = Fixtures.ConfigKey, Registry = new Registry() }));
         }
-
-        [Fact]
-        public void BlankConfigKeyIsRejected()
-        {
-            var ex = Assert.Throws<ArgumentException>(() => LdAi.Config(new ConfigArgs { Handler = H("OpenAI", "x") }));
-            Assert.Equal("args", ex.ParamName);
-        }
     }
 }

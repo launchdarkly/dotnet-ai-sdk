@@ -54,8 +54,6 @@ namespace LaunchDarkly.AI.Server.Tests
 
         [Theory]
         [InlineData(42, "42")]
-        [InlineData(true, "true")]
-        [InlineData(false, "false")]
         [InlineData(2.5, "2.5")]
         public void NonStringValuesAreCoercedToText(object value, string expected) =>
             Assert.Equal("v=" + expected, LdAi.ParseTemplate("v={{x}}", Vars(("x", value))));

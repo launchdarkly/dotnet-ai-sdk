@@ -233,7 +233,7 @@ LaunchDarkly.AI.Server.TrackData.ModelKey.get -> string?
 LaunchDarkly.AI.Server.TrackData.ModelKey.init -> void
 LaunchDarkly.AI.Server.TrackData.ModelName.get -> string!
 LaunchDarkly.AI.Server.TrackData.ModelName.init -> void
-LaunchDarkly.AI.Server.TrackData.ModelVersion.get -> int?
+LaunchDarkly.AI.Server.TrackData.ModelVersion.get -> long?
 LaunchDarkly.AI.Server.TrackData.ModelVersion.init -> void
 LaunchDarkly.AI.Server.TrackData.ProviderName.get -> string!
 LaunchDarkly.AI.Server.TrackData.ProviderName.init -> void
@@ -255,7 +255,7 @@ LaunchDarkly.AI.Server.VariationMeta.Mode.get -> string?
 LaunchDarkly.AI.Server.VariationMeta.Mode.init -> void
 LaunchDarkly.AI.Server.VariationMeta.ModelKey.get -> string?
 LaunchDarkly.AI.Server.VariationMeta.ModelKey.init -> void
-LaunchDarkly.AI.Server.VariationMeta.ModelVersion.get -> int?
+LaunchDarkly.AI.Server.VariationMeta.ModelVersion.get -> long?
 LaunchDarkly.AI.Server.VariationMeta.ModelVersion.init -> void
 LaunchDarkly.AI.Server.VariationMeta.VariationKey.get -> string?
 LaunchDarkly.AI.Server.VariationMeta.VariationKey.init -> void

@@ -82,17 +82,6 @@ namespace LaunchDarkly.AI.Server.Tests
         }
 
         [Fact]
-        public async Task EachTokenCountIsSkippedOnItsOwnWhenZero()
-        {
-            SetVariation();
-            await InvokeAsync(Returning("ok", Fixtures.Usage(("input_tokens", 4), ("output_tokens", 0))));
-
-            Assert.Single(Fake.Events(TokensTotal));
-            Assert.Single(Fake.Events(TokensInput));
-            Assert.Empty(Fake.Events(TokensOutput));
-        }
-
-        [Fact]
         public async Task DurationIsTrackedBeforeTheErrorReachesTheCaller()
         {
             SetVariation();

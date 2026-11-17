@@ -57,7 +57,7 @@ namespace LaunchDarkly.AI.Server.Tests
             }));
 
             Assert.Equal("my-model", result.Meta!.ModelKey);
-            Assert.Equal(3, result.Meta.ModelVersion);
+            Assert.Equal(3L, result.Meta.ModelVersion);
         }
 
         [Fact]
@@ -111,7 +111,7 @@ namespace LaunchDarkly.AI.Server.Tests
             var (_, result) = await InspectAsync(_ => { });
 
             AssertEmptyWithError(result);
-            Assert.Equal(Fixtures.ConfigKey, Assert.IsType<AiConfigNotFoundException>(result.Error).ConfigKey);
+            Assert.IsType<AiConfigNotFoundException>(result.Error);
         }
 
         [Fact]

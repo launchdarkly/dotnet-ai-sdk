@@ -221,7 +221,7 @@ namespace LaunchDarkly.AI.Server
         public string? ModelKey { get; init; }
 
         /// <summary>The pinned model config version, when present and an integer.</summary>
-        public int? ModelVersion { get; init; }
+        public long? ModelVersion { get; init; }
     }
 
     /// <summary>
@@ -290,7 +290,7 @@ namespace LaunchDarkly.AI.Server
         public string? ModelKey { get; init; }
 
         /// <summary>The pinned model config version, when present.</summary>
-        public int? ModelVersion { get; init; }
+        public long? ModelVersion { get; init; }
     }
 
     /// <summary>

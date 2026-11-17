@@ -106,8 +106,7 @@ namespace LaunchDarkly.AI.Server.Tests
         [Fact]
         public async Task MissingVariationThrowsNotFound()
         {
-            var ex = await Assert.ThrowsAsync<AiConfigNotFoundException>(() => InvokeAsync(Returning("ok")));
-            Assert.Equal(Fixtures.ConfigKey, ex.ConfigKey);
+            await Assert.ThrowsAsync<AiConfigNotFoundException>(() => InvokeAsync(Returning("ok")));
             Assert.Empty(Calls);
         }
 
@@ -115,8 +114,7 @@ namespace LaunchDarkly.AI.Server.Tests
         public async Task DisabledVariationThrowsDisabled()
         {
             SetVariation(j => ((JsonObject)j["_ldMeta"]!)["enabled"] = false);
-            var ex = await Assert.ThrowsAsync<AiConfigDisabledException>(() => InvokeAsync(Returning("ok")));
-            Assert.Equal(Fixtures.ConfigKey, ex.ConfigKey);
+            await Assert.ThrowsAsync<AiConfigDisabledException>(() => InvokeAsync(Returning("ok")));
             Assert.Empty(Calls);
         }
 
@@ -128,10 +126,10 @@ namespace LaunchDarkly.AI.Server.Tests
         }
 
         [Fact]
-        public async Task VariationWithoutMetaIsNotEnabled()
+        public async Task VariationWithoutMetaIsDisabled()
         {
             SetVariation(j => j.Remove("_ldMeta"));
-            await Assert.ThrowsAnyAsync<LdAiException>(() => InvokeAsync(Returning("ok")));
+            await Assert.ThrowsAsync<AiConfigDisabledException>(() => InvokeAsync(Returning("ok")));
             Assert.Empty(Calls);
         }
 

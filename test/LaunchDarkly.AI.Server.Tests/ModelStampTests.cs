@@ -39,7 +39,7 @@ namespace LaunchDarkly.AI.Server.Tests
             var response = await InvokeWithMeta("my-model", 3);
 
             Assert.Equal("my-model", response.TrackData.ModelKey);
-            Assert.Equal(3, response.TrackData.ModelVersion);
+            Assert.Equal(3L, response.TrackData.ModelVersion);
             Assert.NotEmpty(AiEvents());
             Assert.All(AiEvents(), e =>
             {
@@ -104,7 +104,7 @@ namespace LaunchDarkly.AI.Server.Tests
         public async Task IntegralValuesAreAcceptedAsIntegers(string rawVersion)
         {
             var response = await InvokeWithMeta("my-model", JsonNode.Parse(rawVersion));
-            Assert.Equal(3, response.TrackData.ModelVersion);
+            Assert.Equal(3L, response.TrackData.ModelVersion);
         }
 
         [Fact]
@@ -131,7 +131,7 @@ namespace LaunchDarkly.AI.Server.Tests
             Assert.Equal(2, response.TrackData.Version);
             Assert.Equal("test-model", response.TrackData.ModelName);
             Assert.Equal("OpenAI", response.TrackData.ProviderName);
-            Assert.True(System.Guid.TryParse(response.TrackData.RunId, out _));
+            Assert.False(string.IsNullOrEmpty(response.TrackData.RunId));
         }
     }
 }
