@@ -115,7 +115,7 @@ namespace LaunchDarkly.AI.Server
         /// <returns>The bound config.</returns>
         public static Config Config(ConfigArgs args)
         {
-            throw new NotImplementedException();
+            return Server.Config.Bind(args);
         }
 
         /// <summary>
