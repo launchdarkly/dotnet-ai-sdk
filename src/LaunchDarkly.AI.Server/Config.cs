@@ -93,17 +93,11 @@ namespace LaunchDarkly.AI.Server
             var scoped = ToolRouting.Scope(config.Tools, ResolveTools());
             var tools = ToolRouting.Wrap(scoped, toolKey => TrackToolCall(client, context, trackData, toolKey));
 
-            var handlerVariables = new Dictionary<string, object?>(StringComparer.Ordinal);
-            foreach (var entry in Variables.WithContext(variables, context))
-            {
-                handlerVariables[entry.Key] = entry.Value;
-            }
-
-            handlerVariables["__ld"] = trackData;
-            if (handler.EffectiveCaptureContent)
-            {
-                handlerVariables["__ldValue"] = ToJsonElement(value);
-            }
+            var handlerVariables = Variables.WithContext(
+                variables,
+                context,
+                trackData,
+                handler.EffectiveCaptureContent ? ToJsonElement(value) : null);
 
             var request = new HandlerRequest(config)
             {
