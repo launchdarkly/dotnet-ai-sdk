@@ -33,7 +33,7 @@ namespace LaunchDarkly.AI.TestHelpers
     /// A hand-written in-memory double of the LaunchDarkly server-side client. It serves JSON
     /// variations from a dictionary and records every evaluation and track call.
     /// </summary>
-    public sealed class FakeLdClient : ILdClient
+    public sealed class FakeLdClient : ILdClient, IDisposable
     {
         private readonly object _lock = new object();
         private readonly List<TrackedEvent> _tracks = new List<TrackedEvent>();
