@@ -77,7 +77,6 @@ namespace LaunchDarkly.AI.Server
             CancellationToken cancellationToken = default)
         {
             UsageReporter.Report("client.config.invoke");
-            SdkState.MarkInvoked();
             cancellationToken.ThrowIfCancellationRequested();
 
             var client = await Lifecycle.GetLdClientAsync(cancellationToken).ConfigureAwait(false);
