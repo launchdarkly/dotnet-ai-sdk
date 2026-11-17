@@ -32,8 +32,9 @@ namespace LaunchDarkly.AI.Server.Internal
         }
 
         /// <summary>
-        /// Returns every piece of process-wide state to its initial value, including the
-        /// registered packages, the reported sets, the configured defaults and the lock.
+        /// Returns the process-wide state to what a fresh process has: no client and no attempt in
+        /// flight, nothing reported or held for reporting, the built-in defaults and no lock.
+        /// Registered packages are kept, as <see cref="LdAi.ShutdownAsync(System.Threading.CancellationToken)"/> keeps them.
         /// </summary>
         internal static void Reset()
         {

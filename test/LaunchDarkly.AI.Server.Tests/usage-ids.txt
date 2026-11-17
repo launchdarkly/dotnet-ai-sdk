@@ -1,0 +1,5 @@
+# Usage table: one line per public member that reports a helper-usage event, in the
+# form "Type.Member  usage=<id>[,<id>]". The usage tests read it as theory data.
+Config.InvokeAsync  usage=client.config.invoke
+LdAi.CreateHandler  usage=client.createHandler
+LdAi.InspectConfigAsync  usage=client.inspectConfig
