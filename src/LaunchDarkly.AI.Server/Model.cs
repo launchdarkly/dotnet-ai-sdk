@@ -99,6 +99,13 @@ namespace LaunchDarkly.AI.Server
         /// <summary>The model name.</summary>
         public string Name { get; init; }
 
+        /// <summary>
+        /// The cross-region inference-profile prefix (for example <c>us</c>, <c>eu</c> or
+        /// <c>global</c>) that a handler sending to Bedrock prepends to <see cref="Name"/>. Never an
+        /// AWS endpoint region.
+        /// </summary>
+        public string? Region { get; init; }
+
         /// <summary>Model parameters, forwarded to a provider only through a handler's allowlist.</summary>
         public IReadOnlyDictionary<string, JsonElement>? Parameters { get; init; }
 

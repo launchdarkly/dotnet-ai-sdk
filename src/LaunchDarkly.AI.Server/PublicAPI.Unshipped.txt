@@ -148,6 +148,8 @@ LaunchDarkly.AI.Server.ModelConfig.Name.get -> string!
 LaunchDarkly.AI.Server.ModelConfig.Name.init -> void
 LaunchDarkly.AI.Server.ModelConfig.Parameters.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Text.Json.JsonElement>?
 LaunchDarkly.AI.Server.ModelConfig.Parameters.init -> void
+LaunchDarkly.AI.Server.ModelConfig.Region.get -> string?
+LaunchDarkly.AI.Server.ModelConfig.Region.init -> void
 LaunchDarkly.AI.Server.NativeTool
 LaunchDarkly.AI.Server.NativeTool.NativeTool(string! toolName) -> void
 LaunchDarkly.AI.Server.NativeTool.ToolName.get -> string!

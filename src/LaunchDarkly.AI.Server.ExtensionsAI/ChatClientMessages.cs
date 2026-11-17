@@ -8,7 +8,7 @@ using Microsoft.Extensions.AI;
 namespace LaunchDarkly.AI.Server.ExtensionsAI
 {
     /// <summary>
-    /// Options for <see cref="ChatClientMessages.InvokeAsync(string, string?, Context, ChatClientMessagesOptions?, CancellationToken)"/>.
+    /// Options for <see cref="ChatClientMessages.InvokeAsync(string, string?, Context, ChatClientMessagesOptions, CancellationToken)"/>.
     /// </summary>
     public sealed class ChatClientMessagesOptions
     {
@@ -48,14 +48,14 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI
         /// <param name="configKey">The AI Config key.</param>
         /// <param name="userInput">The user's input.</param>
         /// <param name="context">The evaluation context.</param>
-        /// <param name="options">The chat client and the other config and handler options.</param>
+        /// <param name="options">The chat client (or client factory), and the other config and handler options.</param>
         /// <param name="cancellationToken">Cancels the call.</param>
         /// <returns>The response, usage and tracking data.</returns>
         public static Task<ProviderResponse> InvokeAsync(
             string configKey,
             string? userInput,
             Context context,
-            ChatClientMessagesOptions? options = null,
+            ChatClientMessagesOptions options,
             CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();

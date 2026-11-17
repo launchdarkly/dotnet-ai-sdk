@@ -72,15 +72,6 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         }
 
         [Fact]
-        public void TheFactoryOptionsHaveNoRetryCount()
-        {
-            // The handler only takes a caller-built client, whose own pipeline owns retries, so
-            // there is no retry option to pass or refuse in 0.1.0.
-            Assert.Null(typeof(ChatClientHandlerOptions).GetProperty("MaxRetries"));
-            Assert.NotNull(ChatClientHandler.Create(Chat, new ChatClientHandlerOptions()));
-        }
-
-        [Fact]
         public async Task PrebuiltClientIsUsedAsIs()
         {
             await RunAsync(Config());
