@@ -17,11 +17,13 @@ BASE="${1:?usage: scripts/api-compat.sh <base-ref>}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DOTNET="${DOTNET:-dotnet}"
 SOLUTION="LaunchDarkly.AI.Server.sln"
-# Packages that ship an assembly. LaunchDarkly.AI is a metapackage with no API of its own.
-PACKAGES=(LaunchDarkly.AI.Server LaunchDarkly.AI.Server.ExtensionsAI)
 export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 
-BASE_SHA="$(git -C "$ROOT" rev-parse --verify "$BASE^{commit}")"
+if ! BASE_SHA="$(git -C "$ROOT" rev-parse --verify --quiet "$BASE^{commit}")"; then
+  echo "api-compat: the base ref '$BASE' does not exist (yet; local main stays empty until the first reviewed step is fast-forwarded into it)." >&2
+  echo "api-compat: pass an existing ref or commit: make api-compat BASE=<ref>" >&2
+  exit 1
+fi
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/api-compat.XXXXXX")"
 cleanup() {
   git -C "$ROOT" worktree remove --force "$WORK/base" >/dev/null 2>&1 || true
@@ -63,11 +65,41 @@ references() { # <option> <project file>
   done
 }
 
+# Lists the packages in a folder as "<id>|<nupkg path>|<1 if it ships an assembly, else 0>",
+# reading the ID from each package's nuspec.
+list_packages() { # <folder>
+  python3 -I - "$1" <<'PY'
+import os, sys, zipfile
+import xml.etree.ElementTree as ET
+folder = sys.argv[1]
+for name in sorted(os.listdir(folder)):
+    if not name.endswith(".nupkg") or name.endswith(".symbols.nupkg"):
+        continue
+    path = os.path.join(folder, name)
+    with zipfile.ZipFile(path) as z:
+        names = z.namelist()
+        nuspec = ET.fromstring(z.read(next(n for n in names if n.endswith(".nuspec"))))
+    ns = nuspec.tag.split("}")[0].strip("{")
+    pid = nuspec.find(f"{{{ns}}}metadata/{{{ns}}}id").text
+    ships = any(n.startswith("lib/") and n.endswith(".dll") for n in names)
+    print(f"{pid}|{path}|{int(ships)}")
+PY
+}
+
+declare -A HEAD_PKG BASE_PKG SHIPS
+while IFS='|' read -r id path ships; do HEAD_PKG[$id]="$path"; SHIPS[$id]="$ships"; done < <(list_packages "$WORK/head-nupkgs")
+while IFS='|' read -r id path ships; do
+  BASE_PKG[$id]="$path"
+  [ "${SHIPS[$id]:-0}" = "1" ] || SHIPS[$id]="$ships"
+done < <(list_packages "$WORK/base-nupkgs")
+mapfile -t PACKAGE_IDS < <(printf '%s\n' "${!HEAD_PKG[@]}" "${!BASE_PKG[@]}" | sort -u)
+echo "api-compat: packages: ${PACKAGE_IDS[*]}"
+
 failed=()
 tool_errors=()
-for id in "${PACKAGES[@]}"; do
-  head_pkg="$(ls "$WORK/head-nupkgs/$id".[0-9]*.nupkg 2>/dev/null | head -1 || true)"
-  base_pkg="$(ls "$WORK/base-nupkgs/$id".[0-9]*.nupkg 2>/dev/null | head -1 || true)"
+for id in "${PACKAGE_IDS[@]}"; do
+  head_pkg="${HEAD_PKG[$id]:-}"
+  base_pkg="${BASE_PKG[$id]:-}"
   if [ -z "$head_pkg" ]; then
     echo "api-compat: $id: no longer packed; that is a breaking change."
     failed+=("$id")
@@ -75,6 +107,10 @@ for id in "${PACKAGES[@]}"; do
   fi
   if [ -z "$base_pkg" ]; then
     echo "api-compat: $id: new package, nothing to compare against."
+    continue
+  fi
+  if [ "${SHIPS[$id]}" != "1" ]; then
+    echo "api-compat: $id: ships no assembly (a metapackage), no API to compare."
     continue
   fi
   args=()

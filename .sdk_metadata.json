@@ -1,8 +1,27 @@
 {
   "version": 1,
   "sdks": {
-    "dotnet-ai-server": {
+    "dotnet-ai": {
       "name": ".NET AI SDK",
+      "type": "ai",
+      "path": "src/LaunchDarkly.AI",
+      "languages": [
+        "C#"
+      ],
+      "releases": {
+        "tag-prefix": "v"
+      },
+      "features": {
+        "aiCompletionConfig": {
+          "introduced": "1.0"
+        },
+        "aiTrackMetrics": {
+          "introduced": "1.0"
+        }
+      }
+    },
+    "dotnet-ai-server": {
+      "name": "Core .NET AI SDK",
       "type": "ai",
       "path": "src/LaunchDarkly.AI.Server",
       "languages": [

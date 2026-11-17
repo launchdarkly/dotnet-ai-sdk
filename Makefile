@@ -4,8 +4,8 @@
 SOLUTION := LaunchDarkly.AI.Server.sln
 CONFIGURATION ?= Release
 DOTNET ?= dotnet
-# Paths of the public API files that api-check keeps in sync with the code.
-PUBLIC_API_FILES := $(wildcard src/*/PublicAPI.*.txt)
+# The public API files that api-check keeps in sync with the code (a git pathspec).
+PUBLIC_API_PATHSPEC := 'src/*/PublicAPI.*.txt'
 
 .PHONY: build test lint format format-check api-check api-compat docs pack pack-check clean restore tools
 
@@ -43,9 +43,15 @@ format-check: restore
 # what is committed. A new public member belongs in PublicAPI.Unshipped.txt.
 api-check: restore
 	$(DOTNET) format analyzers $(SOLUTION) --no-restore --diagnostics RS0016 RS0017 --severity hidden
-	@git diff --exit-code -- $(PUBLIC_API_FILES) || { \
-		echo "Public API files are out of date. Review the diff above and commit it if the change is intended."; \
-		exit 1; }
+	@# git status rather than git diff, so a PublicAPI file the fixer creates
+	@# (untracked, for example in a new package) fails the check too.
+	@changes="$$(git status --porcelain --untracked-files=all -- $(PUBLIC_API_PATHSPEC))"; \
+	if [ -n "$$changes" ]; then \
+		echo "$$changes"; \
+		git --no-pager diff -- $(PUBLIC_API_PATHSPEC); \
+		echo "Public API files are out of date or new. Review the changes above and commit them if they are intended."; \
+		exit 1; \
+	fi
 
 # Breaking-change check of the public API against a git ref (default: main), with
 # ApiCompat (pinned in .config/dotnet-tools.json). The ref is built in a temporary

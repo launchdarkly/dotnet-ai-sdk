@@ -1,5 +1,7 @@
 # Git hooks (https://lefthook.dev). Install once with `lefthook install`.
+# The hook runs exactly what `make format-check` and CI run, so a commit that passes
+# the hook passes the CI format check, and the other way round.
 pre-commit:
   jobs:
     - name: format-check
-      run: dotnet format --verify-no-changes --no-restore LaunchDarkly.AI.Server.sln
+      run: make format-check
