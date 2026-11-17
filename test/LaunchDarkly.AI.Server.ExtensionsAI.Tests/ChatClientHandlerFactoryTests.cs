@@ -11,8 +11,8 @@ using Xunit;
 namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
 {
     /// <summary>
-    /// The handler factory: metadata, content capture, provider scoping, the retry option and the
-    /// two ways of supplying the chat client.
+    /// The handler factory: metadata, content capture, provider scoping and the two ways of
+    /// supplying the chat client.
     /// </summary>
     public class ChatClientHandlerFactoryTests : HandlerHarness
     {
@@ -61,6 +61,8 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
             Array.Empty<string>(),
             new[] { "" },
             new[] { " Bedrock" },
+            new[] { "Bedrock " },
+            new[] { "Bedrock", "  " },
         };
 
         [Theory]
@@ -127,6 +129,15 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
             });
             await handler.InvokeAsync(new HandlerRequest(Config()) { UserInput = "hi" }, cts.Token);
             Assert.Equal(cts.Token, seen);
+        }
+
+        [Fact]
+        public async Task CallersTokenReachesTheChatClient()
+        {
+            using var cts = new CancellationTokenSource();
+            var handler = ChatClientHandler.Create(Chat);
+            await handler.InvokeAsync(new HandlerRequest(Config()) { UserInput = "hi" }, cts.Token);
+            Assert.Equal(cts.Token, Chat.LastRequest.CancellationToken);
         }
 
         [Fact]

@@ -13,11 +13,15 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
     /// </summary>
     public sealed class ChatRequest
     {
-        public ChatRequest(IEnumerable<ChatMessage> messages, ChatOptions? options)
+        public ChatRequest(IEnumerable<ChatMessage> messages, ChatOptions? options, CancellationToken cancellationToken)
         {
             Messages = messages.ToList();
             Options = options?.Clone();
+            CancellationToken = cancellationToken;
         }
+
+        /// <summary>The token the handler passed with this request.</summary>
+        public CancellationToken CancellationToken { get; }
 
         public IReadOnlyList<ChatMessage> Messages { get; }
 
@@ -105,14 +109,22 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
 
         public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = default)
         {
-            var request = new ChatRequest(messages, options);
+            var request = new ChatRequest(messages, options, cancellationToken);
             lock (_requests)
             {
                 _requests.Add(request);
             }
 
             var next = _script.Count > 0 ? _script.Dequeue() : (_ => new ChatResponse(new ChatMessage(ChatRole.Assistant, "done")));
-            return Task.FromResult(next(request));
+            try
+            {
+                return Task.FromResult(next(request));
+            }
+            catch (Exception error)
+            {
+                // A real client reports a failure through the returned task, not by throwing.
+                return Task.FromException<ChatResponse>(error);
+            }
         }
 
         public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(

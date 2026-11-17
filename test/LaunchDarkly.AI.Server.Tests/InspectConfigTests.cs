@@ -160,8 +160,10 @@ namespace LaunchDarkly.AI.Server.Tests
         [Fact]
         public async Task EmitsNoGenerationDurationOrTokenEvents()
         {
-            var (fake, _) = await InspectAsync(f => f.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig());
+            var (fake, result) = await InspectAsync(f => f.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig());
 
+            Assert.True(result.Enabled);
+            Assert.Null(result.Error);
             Assert.Empty(fake.EventsStartingWith("$ld:ai:generation:"));
             Assert.Empty(fake.EventsStartingWith("$ld:ai:duration:"));
             Assert.Empty(fake.EventsStartingWith("$ld:ai:tokens:"));

@@ -52,7 +52,8 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         [Fact]
         public async Task RootJoinsTheCallersTrace()
         {
-            using var parent = new ActivitySource(SpanRecorder.SourceName).StartActivity("caller");
+            using var source = new ActivitySource(SpanRecorder.SourceName);
+            using var parent = source.StartActivity("caller");
             await RunAsync(Config());
             Assert.Equal(parent!.SpanId, _spans.Root.ParentSpanId);
         }
@@ -74,7 +75,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
 
             var chat = _spans.Named("chat ").Single();
             Assert.Equal("openai", chat.AttrString("gen_ai.provider.name"));
-            Assert.False(string.IsNullOrEmpty(chat.AttrString("gen_ai.system")));
+            Assert.Equal("microsoft.extensions.ai", chat.AttrString("gen_ai.system"));
         }
 
         [Fact]

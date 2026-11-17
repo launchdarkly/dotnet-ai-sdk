@@ -30,6 +30,5 @@ namespace LaunchDarkly.AI.Tests
             Assert.Same(typeof(Config).Assembly, typeof(NativeTool).Assembly);
             Assert.Same(typeof(Config).Assembly, typeof(Registry).Assembly);
         }
-
     }
 }

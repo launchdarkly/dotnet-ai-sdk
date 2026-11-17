@@ -91,7 +91,9 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
             await CallAsync(name, fake);
 
             var events = fake.Events(SdkUsage);
-            Assert.Equal(row.Ids, events.Select(e => e.DataString("helper")));
+            Assert.Equal(
+                row.Ids.OrderBy(i => i, StringComparer.Ordinal),
+                events.Select(e => e.DataString("helper")).OrderBy(i => i, StringComparer.Ordinal));
             var e = events.Single();
             Assert.Equal(PackageInfo.Name, e.DataString("helperPackageName"));
             Assert.Equal(PackageInfo.Version, e.DataString("helperPackageVersion"));
