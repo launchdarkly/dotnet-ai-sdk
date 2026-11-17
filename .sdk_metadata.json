@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "sdks": {
+    "dotnet-ai-server": {
+      "name": ".NET AI SDK",
+      "type": "ai",
+      "path": "src/LaunchDarkly.AI.Server",
+      "languages": [
+        "C#"
+      ],
+      "aiSdkNames": [
+        "LaunchDarkly.AI.Server"
+      ],
+      "releases": {
+        "tag-prefix": "v"
+      },
+      "features": {
+        "aiCompletionConfig": {
+          "introduced": "1.0"
+        },
+        "aiTrackMetrics": {
+          "introduced": "1.0"
+        }
+      }
+    },
+    "dotnet-ai-extensions-ai": {
+      "name": ".NET AI SDK for Microsoft.Extensions.AI",
+      "type": "ai-provider",
+      "path": "src/LaunchDarkly.AI.Server.ExtensionsAI",
+      "languages": [
+        "C#"
+      ],
+      "aiSdkNames": [
+        "LaunchDarkly.AI.Server.ExtensionsAI"
+      ],
+      "releases": {
+        "tag-prefix": "v"
+      },
+      "features": {
+        "aiCompletionConfig": {
+          "introduced": "1.0"
+        }
+      }
+    }
+  }
+}

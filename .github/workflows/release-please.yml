@@ -1,0 +1,45 @@
+# Release Please: run by hand only (workflow_dispatch). It does not run on push.
+#
+# Nothing is published before 1.0. Until then, each feature pull request sets the
+# next 0.x working version by hand, and no release PR, tag or GitHub release exists.
+#
+# The first run of this workflow is the 1.0 publication: release-please-config.json
+# sets "release-as": "1.0.0", so the first release PR it opens is for 1.0.0. Remove
+# "release-as" in the pull request after the 1.0 release, so later releases are
+# computed from the conventional commits.
+#
+# When a release PR is merged and the workflow is dispatched again, it tags the
+# release and calls the release workflow. The NuGet push there waits for approval
+# in the protected "nuget-publish" environment.
+name: Release Please
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release-please:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release-created: ${{ steps.release.outputs.release_created }}
+      tag-name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          target-branch: ${{ github.ref_name }}
+
+  release:
+    needs: ['release-please']
+    if: ${{ needs.release-please.outputs.release-created == 'true' }}
+    permissions:
+      id-token: write
+      contents: write
+      attestations: write
+    uses: ./.github/workflows/release.yml
+    with:
+      dry_run: false
+      generate_provenance: true

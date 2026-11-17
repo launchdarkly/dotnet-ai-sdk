@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'feat/**']
+    paths-ignore:
+      - '**.md' # Markdown-only changes don't need CI.
+  pull_request:
+    branches: [main, 'feat/**']
+    paths-ignore:
+      - '**.md'
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build and test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          # The SDK comes from global.json; the 8.0 runtime runs the net8.0 tests.
+          global-json-file: global.json
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        shell: bash
+        run: dotnet restore LaunchDarkly.AI.Server.sln
+
+      # Without the private key, Release builds are public-signed with LaunchDarkly.pk.
+      - name: Build (Release, warnings as errors)
+        shell: bash
+        run: dotnet build LaunchDarkly.AI.Server.sln --no-restore -c Release -warnaserror
+
+      # Tests run on the Debug build: net8.0 and net10.0 everywhere, plus net462 on Windows.
+      - name: Test
+        shell: bash
+        run: dotnet test LaunchDarkly.AI.Server.sln --no-restore -c Debug --blame-hang-timeout 60s --logger "console;verbosity=normal"
+
+  checks:
+    name: Format, lint, public API, docs, pack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Format check
+        run: make format-check
+
+      - name: Lint
+        run: make lint
+
+      - name: Public API check
+        run: make api-check
+
+      - name: Docs
+        run: make docs
+
+      - name: Pack
+        run: make pack
