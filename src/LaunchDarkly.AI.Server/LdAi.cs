@@ -120,12 +120,15 @@ namespace LaunchDarkly.AI.Server
 
         /// <summary>
         /// Reads an AI Config variation without invoking a model, initializing the client from the
-        /// environment if needed. Never throws.
+        /// environment if needed. A missing, invalid or unreadable config, or a client that cannot be
+        /// initialized, is reported in the result rather than thrown.
         /// </summary>
         /// <param name="key">The AI Config key.</param>
         /// <param name="context">The evaluation context.</param>
         /// <param name="cancellationToken">Cancels the call.</param>
         /// <returns>The variation, or the reason it could not be read.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="key"/> is <see langword="null"/>.</exception>
+        /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was cancelled.</exception>
         public static Task<InspectResult> InspectConfigAsync(string key, Context context, CancellationToken cancellationToken = default)
         {
             UsageReporter.Report(UsageReporter.InspectConfig);
