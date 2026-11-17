@@ -25,4 +25,16 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="all" />
   </ItemGroup>
+  <!-- Release builds of the libraries are strong-named, and they name the test assemblies as
+       friends with the shared public key, so Release test builds are signed the same way. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' And Exists('$(MSBuildThisFileDirectory)../LaunchDarkly.snk')">
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)../LaunchDarkly.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' And !Exists('$(MSBuildThisFileDirectory)../LaunchDarkly.snk')">
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)../LaunchDarkly.pk</AssemblyOriginatorKeyFile>
+    <PublicSign>true</PublicSign>
+  </PropertyGroup>
 </Project>
