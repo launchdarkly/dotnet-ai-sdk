@@ -66,9 +66,10 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         {
             var ran = new List<string>();
             Chat.ThenToolCall("privileged").ThenText("never");
+            var handler = Handler();
 
-            var ex = await Assert.ThrowsAnyAsync<Exception>(() => RunAsync(Config() with { Tools = ConfigTools("safe") },
-                tools: new Dictionary<string, ToolHandler> { ["safe"] = Tool(ran, name: "safe"), ["privileged"] = Tool(ran, name: "privileged") }));
+            var ex = await Assert.ThrowsAnyAsync<LdAiException>(() => RunAsync(Config() with { Tools = ConfigTools("safe") },
+                tools: new Dictionary<string, ToolHandler> { ["safe"] = Tool(ran, name: "safe"), ["privileged"] = Tool(ran, name: "privileged") }, handler: handler));
 
             Assert.Contains("privileged", ex.Message, StringComparison.Ordinal);
             Assert.Empty(ran);
@@ -82,9 +83,10 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         {
             var ran = new List<string>();
             Chat.ThenToolCall(name).ThenText("never");
+            var handler = Handler();
 
-            var ex = await Assert.ThrowsAnyAsync<Exception>(() => RunAsync(Config() with { Tools = ConfigTools("safe") },
-                tools: new Dictionary<string, ToolHandler> { ["safe"] = Tool(ran, name: "safe") }));
+            var ex = await Assert.ThrowsAnyAsync<LdAiException>(() => RunAsync(Config() with { Tools = ConfigTools("safe") },
+                tools: new Dictionary<string, ToolHandler> { ["safe"] = Tool(ran, name: "safe") }, handler: handler));
 
             Assert.Contains(name, ex.Message, StringComparison.Ordinal);
             Assert.Empty(ran);
@@ -106,8 +108,12 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         public async Task NativeToolValueIsNeverCalled()
         {
             Chat.ThenToolCall("web").ThenText("never");
-            await Assert.ThrowsAnyAsync<Exception>(() => RunAsync(Config() with { Tools = ConfigTools("web") },
-                tools: new Dictionary<string, ToolHandler> { ["web"] = new NativeTool("WebSearch") }));
+            var handler = Handler();
+
+            var ex = await Assert.ThrowsAnyAsync<LdAiException>(() => RunAsync(Config() with { Tools = ConfigTools("web") },
+                tools: new Dictionary<string, ToolHandler> { ["web"] = new NativeTool("WebSearch") }, handler: handler));
+
+            Assert.Contains("web", ex.Message, StringComparison.Ordinal);
             Assert.Empty(Chat.Requests[0].Tools);
         }
 
@@ -164,7 +170,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         public async Task UsageAddsUpAcrossTurns()
         {
             Chat.ThenToolCall("a").ThenText("done", FakeChatClient.Usage(10, 5));
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig(edit: j => j["tools"] = new JsonObject { ["a"] = Fixtures.ToolJson("a") });
 
             var response = await LdAi.Config(new ConfigArgs
@@ -182,7 +188,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         public async Task ToolCallsThroughConfigAreTracked()
         {
             Chat.ThenToolCall("a").ThenToolCall("a").ThenText("done");
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig(edit: j => j["tools"] = new JsonObject { ["a"] = Fixtures.ToolJson("a") });
 
             await LdAi.Config(new ConfigArgs

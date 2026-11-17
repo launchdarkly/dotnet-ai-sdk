@@ -4,8 +4,6 @@ LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandlerOptions
 LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandlerOptions.CaptureContent.get -> bool?
 LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandlerOptions.CaptureContent.init -> void
 LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandlerOptions.ChatClientHandlerOptions() -> void
-LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandlerOptions.MaxRetries.get -> int?
-LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandlerOptions.MaxRetries.init -> void
 LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandlerOptions.Providers.get -> System.Collections.Generic.IReadOnlyList<string!>?
 LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandlerOptions.Providers.init -> void
 LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessages

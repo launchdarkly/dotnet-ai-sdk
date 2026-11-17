@@ -14,7 +14,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
     {
         private async Task<FakeLdClient> SetUpAsync(string instructions = "Hello {{name}}")
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig(edit: j => j["instructions"] = instructions);
             fake.Variations["other-config"] = Fixtures.EnabledConfig(edit: j => j["instructions"] = "other");
             return fake;

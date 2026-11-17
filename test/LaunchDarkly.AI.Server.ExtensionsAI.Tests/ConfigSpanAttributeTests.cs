@@ -146,7 +146,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         [Fact]
         public async Task InvokingThroughConfigWritesTheSameAttributes()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig();
             var response = await LdAi.Config(new ConfigArgs { Key = Fixtures.ConfigKey, Handler = Handler() })
                 .InvokeAsync("hi", Fixtures.UserContext);

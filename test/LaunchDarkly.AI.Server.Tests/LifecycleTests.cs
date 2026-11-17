@@ -127,7 +127,10 @@ namespace LaunchDarkly.AI.Server.Tests
         public async Task ConstructionErrorDoesNotLeaveAClientBehind()
         {
             OnBuild = (_, _) => throw new InvalidOperationException("constructor failed");
-            await Assert.ThrowsAnyAsync<Exception>(() => LdAi.InitClientAsync(new InitOptions { SdkKey = "sdk-key" }));
+            // The constructor's error reaches the caller, as itself or wrapped.
+            var ex = await Record.ExceptionAsync(() => LdAi.InitClientAsync(new InitOptions { SdkKey = "sdk-key" }));
+            var original = ex as InvalidOperationException ?? ex?.InnerException as InvalidOperationException;
+            Assert.Equal("constructor failed", original?.Message);
             Assert.Throws<InvalidOperationException>(() => LdAi.GetClient());
 
             OnBuild = null;
@@ -221,7 +224,7 @@ namespace LaunchDarkly.AI.Server.Tests
             await LdAi.ShutdownAsync();
             release.Set();
 
-            await Assert.ThrowsAnyAsync<Exception>(() => init);
+            await Assert.ThrowsAnyAsync<LdAiException>(() => init);
             Assert.Equal(1, Assert.Single(Built).Closes);
             Assert.Throws<InvalidOperationException>(() => LdAi.GetClient());
         }
@@ -280,7 +283,7 @@ namespace LaunchDarkly.AI.Server.Tests
         [Fact]
         public async Task ShutdownClearsTheSingleton()
         {
-            await InitWithFakeAsync();
+            UseFakeClient();
             await LdAi.ShutdownAsync();
             Assert.Throws<InvalidOperationException>(() => LdAi.GetClient());
         }
@@ -288,7 +291,7 @@ namespace LaunchDarkly.AI.Server.Tests
         [Fact]
         public async Task ShutdownFlushesAndClosesTheClient()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             await LdAi.ShutdownAsync();
             Assert.True(fake.Flushes >= 1);
             Assert.Equal(1, fake.Closes);
@@ -297,7 +300,7 @@ namespace LaunchDarkly.AI.Server.Tests
         [Fact]
         public async Task ShutdownThroughTheClientInterfaceBehavesTheSame()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             await LdAi.GetClient().ShutdownAsync();
             Assert.Equal(1, fake.Closes);
             Assert.Throws<InvalidOperationException>(() => LdAi.GetClient());
@@ -306,7 +309,7 @@ namespace LaunchDarkly.AI.Server.Tests
         [Fact]
         public async Task DisposingTheClientShutsItDown()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             LdAi.GetClient().Dispose();
             Assert.Equal(1, fake.Closes);
             Assert.Throws<InvalidOperationException>(() => LdAi.GetClient());
@@ -335,7 +338,7 @@ namespace LaunchDarkly.AI.Server.Tests
         public async Task ShutdownIsIdempotent()
         {
             await LdAi.ShutdownAsync();
-            await InitWithFakeAsync();
+            UseFakeClient();
             await LdAi.ShutdownAsync();
             await LdAi.ShutdownAsync();
         }
@@ -343,7 +346,7 @@ namespace LaunchDarkly.AI.Server.Tests
         [Fact]
         public async Task ShutdownCompletesTeardownWhenFlushThrows()
         {
-            var fake = await InitWithFakeAsync(new FakeLdClient { FlushThrows = true });
+            var fake = UseFakeClient(new FakeLdClient { FlushThrows = true });
             try
             {
                 await LdAi.ShutdownAsync();

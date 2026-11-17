@@ -72,26 +72,12 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         }
 
         [Fact]
-        public void MaxRetriesIsRefusedWithAnInjectedClient()
+        public void TheFactoryOptionsHaveNoRetryCount()
         {
-            var ex = Assert.Throws<ArgumentException>(() => ChatClientHandler.Create(Chat, new ChatClientHandlerOptions { MaxRetries = 3 }));
-            Assert.Contains("MaxRetries", ex.Message, StringComparison.Ordinal);
-        }
-
-        [Fact]
-        public void MaxRetriesIsRefusedWithAClientFactory()
-        {
-            var ex = Assert.Throws<ArgumentException>(() =>
-                ChatClientHandler.Create((_, _) => new ValueTask<IChatClient>(Chat), new ChatClientHandlerOptions { MaxRetries = 3 }));
-            Assert.Contains("MaxRetries", ex.Message, StringComparison.Ordinal);
-        }
-
-        [Fact]
-        public void NegativeMaxRetriesIsRefusedAtConstruction()
-        {
-            var ex = Assert.Throws<ArgumentException>(() =>
-                ChatClientHandler.Create((_, _) => new ValueTask<IChatClient>(Chat), new ChatClientHandlerOptions { MaxRetries = -1 }));
-            Assert.Contains("MaxRetries", ex.Message, StringComparison.Ordinal);
+            // The handler only takes a caller-built client, whose own pipeline owns retries, so
+            // there is no retry option to pass or refuse in 0.1.0.
+            Assert.Null(typeof(ChatClientHandlerOptions).GetProperty("MaxRetries"));
+            Assert.NotNull(ChatClientHandler.Create(Chat, new ChatClientHandlerOptions()));
         }
 
         [Fact]
@@ -111,7 +97,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
                 return new ValueTask<IChatClient>(Chat);
             });
 
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig(edit: j =>
                 ((JsonObject)j["model"]!)["parameters"] = new JsonObject { ["temperature"] = 0.25 });
             var config = LdAi.Config(new ConfigArgs { Key = Fixtures.ConfigKey, Handler = handler });

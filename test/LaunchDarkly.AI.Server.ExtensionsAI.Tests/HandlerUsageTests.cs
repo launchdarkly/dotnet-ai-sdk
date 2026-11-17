@@ -45,7 +45,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         [Fact]
         public async Task ReportsInputIncludingCacheWithoutDoubleCounting()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig();
             Chat.Then(_ => new ChatResponse(new ChatMessage(ChatRole.Assistant, "ok"))
             {
@@ -62,7 +62,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         [Fact]
         public async Task MissingUsageIsZero()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig();
             Chat.ThenText("ok");
 
@@ -86,7 +86,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         public async Task OneCallSendsExactlyItsOwnEvent(string name)
         {
             var row = UsageTable.Read().Single(r => r.Name == name);
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
 
             await CallAsync(name, fake);
 
@@ -105,7 +105,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         [MemberData(nameof(Rows))]
         public async Task RepeatCallSendsNothing(string name)
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             await CallAsync(name, fake);
             await CallAsync(name, fake);
             Assert.Empty(fake.Events(SdkUsage));
@@ -114,7 +114,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         [Fact]
         public async Task WrapperDoesNotReportTheFactoryOrConfigInvoke()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             await CallAsync("ChatClientMessages.InvokeAsync", fake);
 
             var helpers = fake.Events(SdkUsage).Select(e => e.DataString("helper")).ToList();
@@ -126,7 +126,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         [Fact]
         public async Task FactoryDoesNotReportCreateHandler()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             await CallAsync("ChatClientHandler.Create", fake);
             Assert.DoesNotContain(fake.Events(SdkUsage), e => e.DataString("helper") == "client.createHandler");
         }
@@ -134,10 +134,10 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         [Fact]
         public async Task ShutdownRearmsReporting()
         {
-            var first = await InitWithFakeAsync();
+            var first = UseFakeClient();
             await CallAsync("ChatClientHandler.Create", first);
             await LdAi.ShutdownAsync();
-            var second = await InitWithFakeAsync();
+            var second = UseFakeClient();
             await CallAsync("ChatClientHandler.Create", second);
             Assert.Single(second.Events(SdkUsage));
         }

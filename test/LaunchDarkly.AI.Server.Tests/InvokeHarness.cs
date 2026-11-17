@@ -19,7 +19,7 @@ namespace LaunchDarkly.AI.Server.Tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            Fake = await InitWithFakeAsync();
+            Fake = UseFakeClient();
             Fake.ClearTracks();
         }
 

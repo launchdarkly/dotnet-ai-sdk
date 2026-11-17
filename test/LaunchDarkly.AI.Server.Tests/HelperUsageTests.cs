@@ -80,7 +80,7 @@ namespace LaunchDarkly.AI.Server.Tests
         public async Task OneCallSendsExactlyItsOwnEvent(string name)
         {
             var row = UsageTable.Read().Single(r => r.Name == name);
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
 
             await CallAsync(name, fake);
 
@@ -104,7 +104,7 @@ namespace LaunchDarkly.AI.Server.Tests
         [MemberData(nameof(Rows))]
         public async Task RepeatCallSendsNothing(string name)
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             await CallAsync(name, fake);
             await CallAsync(name, fake);
             Assert.Empty(fake.Events(SdkUsage));
@@ -115,11 +115,11 @@ namespace LaunchDarkly.AI.Server.Tests
         public async Task ShutdownRearmsReporting(string name)
         {
             var row = UsageTable.Read().Single(r => r.Name == name);
-            var first = await InitWithFakeAsync();
+            var first = UseFakeClient();
             await CallAsync(name, first);
             await LdAi.ShutdownAsync();
 
-            var second = await InitWithFakeAsync();
+            var second = UseFakeClient();
             await CallAsync(name, second);
 
             Assert.Single(Usage(second, row.Ids[0]));
@@ -149,7 +149,7 @@ namespace LaunchDarkly.AI.Server.Tests
         [Fact]
         public async Task ThrowingTrackDoesNotFailTheHelperAndIsNotRetried()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.TrackThrows = true;
             var handler = LdAi.CreateHandler(new ProvidesFor("OpenAI", HandlerModes.Messages), (_, _) => Task.FromResult(new HandlerResult()));
             Assert.NotNull(handler);
@@ -162,7 +162,7 @@ namespace LaunchDarkly.AI.Server.Tests
         [Fact]
         public async Task ExistingEventsGainNoUsageFields()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig();
             var handler = Fixtures.RecordingHandler("OpenAI", HandlerModes.Messages, new System.Collections.Generic.List<HandlerRequest>(), "ok",
                 Fixtures.Usage(("input_tokens", 3), ("output_tokens", 4)));
@@ -182,7 +182,7 @@ namespace LaunchDarkly.AI.Server.Tests
         [Fact]
         public async Task ReportUsageDefaultsToTheCorePackage()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             LdAi.ReportUsage("client.testOnlyHelper");
 
             var e = Assert.Single(Usage(fake, "client.testOnlyHelper"));
@@ -193,7 +193,7 @@ namespace LaunchDarkly.AI.Server.Tests
         [Fact]
         public async Task ReportUsageCarriesTheCallersPackage()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             LdAi.ReportUsage("other.helper", "Other.Package", "9.9.9");
 
             var e = Assert.Single(Usage(fake, "other.helper"));
@@ -205,7 +205,7 @@ namespace LaunchDarkly.AI.Server.Tests
         [Fact]
         public async Task CallsFromInsideTheSdkDoNotReport()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig();
             var handler = Fixtures.RecordingHandler("OpenAI", HandlerModes.Messages);
             var config = LdAi.Config(new ConfigArgs { Key = Fixtures.ConfigKey, Handler = handler });

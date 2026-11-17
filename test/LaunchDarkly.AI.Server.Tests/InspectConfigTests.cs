@@ -15,7 +15,7 @@ namespace LaunchDarkly.AI.Server.Tests
     {
         private async Task<(FakeLdClient Fake, InspectResult Result)> InspectAsync(Action<FakeLdClient> setup)
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             setup(fake);
             fake.ClearTracks();
             var result = await LdAi.InspectConfigAsync(Fixtures.ConfigKey, Fixtures.UserContext);
@@ -168,9 +168,21 @@ namespace LaunchDarkly.AI.Server.Tests
         }
 
         [Fact]
+        public async Task CancelledTokenStillThrows()
+        {
+            var fake = UseFakeClient();
+            fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig();
+            using var cts = new System.Threading.CancellationTokenSource();
+            cts.Cancel();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                LdAi.InspectConfigAsync(Fixtures.ConfigKey, Fixtures.UserContext, cts.Token));
+        }
+
+        [Fact]
         public async Task ThroughTheClientInterfaceBehavesTheSame()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig();
 
             var result = await LdAi.GetClient().InspectConfigAsync(Fixtures.ConfigKey, Fixtures.UserContext);

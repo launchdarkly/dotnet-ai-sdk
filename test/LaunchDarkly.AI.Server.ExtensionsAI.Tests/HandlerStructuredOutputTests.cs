@@ -36,7 +36,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         [Fact]
         public async Task StructuredResponseIsParsedThroughConfig()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig(edit: j =>
                 j["outputFormat"] = System.Text.Json.Nodes.JsonNode.Parse(_schema.GetRawText()));
             Chat.ThenText("{\"name\":\"Ann\"}");
@@ -61,7 +61,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         [Fact]
         public async Task UsageIsReportedWithAnOutputFormat()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig(edit: j =>
                 j["outputFormat"] = System.Text.Json.Nodes.JsonNode.Parse(_schema.GetRawText()));
             Chat.ThenText("{\"name\":\"Ann\"}", FakeChatClient.Usage(12, 3));

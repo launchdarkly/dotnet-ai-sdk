@@ -76,7 +76,18 @@ namespace LaunchDarkly.AI.TestHelpers
             return Task.CompletedTask;
         }
 
-        /// <summary>Installs a fresh fake client through the BYOC path and returns it.</summary>
+        /// <summary>
+        /// Installs a fake client through the test seam, with no init side effects, and returns it.
+        /// For tests whose subject is not initialization.
+        /// </summary>
+        protected static FakeLdClient UseFakeClient(FakeLdClient? client = null)
+        {
+            client ??= new FakeLdClient();
+            TestHooks.SetClient(client);
+            return client;
+        }
+
+        /// <summary>Installs a fresh fake client through the public BYOC init path and returns it.</summary>
         protected async Task<FakeLdClient> InitWithFakeAsync(FakeLdClient? client = null)
         {
             client ??= new FakeLdClient();

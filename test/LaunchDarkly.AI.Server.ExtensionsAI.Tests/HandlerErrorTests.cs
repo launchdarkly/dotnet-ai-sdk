@@ -61,7 +61,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         [Fact]
         public async Task ErrorThroughConfigTracksGenerationErrorAndRethrows()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig();
             Chat.ThenThrow(new TimeoutException("slow"));
 

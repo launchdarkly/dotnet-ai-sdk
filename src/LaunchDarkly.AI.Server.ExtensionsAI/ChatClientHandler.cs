@@ -21,12 +21,6 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI
         /// The provider names this wildcard handler serves. <see langword="null"/> serves any.
         /// </summary>
         public IReadOnlyList<string>? Providers { get; init; }
-
-        /// <summary>
-        /// The retry count for a chat client the handler builds itself. Refused with an injected
-        /// client or client factory, whose own pipeline owns retries.
-        /// </summary>
-        public int? MaxRetries { get; init; }
     }
 
     /// <summary>

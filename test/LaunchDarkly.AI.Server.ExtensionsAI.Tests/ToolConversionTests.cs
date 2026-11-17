@@ -68,7 +68,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         [Fact]
         public async Task NativeToolTrackingStubIsNeverOfferedAsAFunction()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.Variations[TestHelpers.Fixtures.ConfigKey] = TestHelpers.Fixtures.EnabledConfig(edit: j =>
                 j["tools"] = new System.Text.Json.Nodes.JsonObject
                 {

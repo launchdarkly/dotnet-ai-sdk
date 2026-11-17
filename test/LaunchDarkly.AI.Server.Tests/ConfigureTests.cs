@@ -83,7 +83,7 @@ namespace LaunchDarkly.AI.Server.Tests
         [Fact]
         public async Task InvocationThroughConfigLatchesTheLock()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig();
             await LdAi.Config(new ConfigArgs { Key = Fixtures.ConfigKey, Handler = Handler() })
                 .InvokeAsync("hi", Fixtures.UserContext);
@@ -94,7 +94,7 @@ namespace LaunchDarkly.AI.Server.Tests
         [Fact]
         public async Task InspectConfigDoesNotLatchTheLock()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig();
             await LdAi.InspectConfigAsync(Fixtures.ConfigKey, Fixtures.UserContext);
 

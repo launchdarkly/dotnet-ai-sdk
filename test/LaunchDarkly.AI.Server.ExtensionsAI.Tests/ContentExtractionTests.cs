@@ -24,7 +24,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         [Fact]
         public async Task ReasoningNeverReachesTheCallersResponse()
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig();
             Chat.ThenContents(new TextReasoningContent("secret thoughts"), new TextContent("visible answer"));
 

@@ -13,7 +13,7 @@ namespace LaunchDarkly.AI.Server.Tests
     {
         private async Task<HandlerRequest> InvokeAsync(IReadOnlyDictionary<string, object?>? variables, bool manyHandlers = false)
         {
-            var fake = await InitWithFakeAsync();
+            var fake = UseFakeClient();
             fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig("OpenAI");
             var calls = new List<HandlerRequest>();
             var handler = Fixtures.RecordingHandler("OpenAI", HandlerModes.Messages, calls);
