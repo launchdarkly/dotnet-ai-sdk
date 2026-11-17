@@ -111,7 +111,13 @@ namespace LaunchDarkly.AI.Server.Tests
         {
             await ResponseFor("{}");
             var request = Assert.Single(Calls);
-            Assert.Equal(new[] { "type", "properties" }, request.Config.OutputFormat!.Value.EnumerateObject().Select(p => p.Name));
+            // The variation passes through LdValue, whose object keys have no order, so compare
+            // the key set and the values, not the order.
+            var format = request.Config.OutputFormat!.Value;
+            Assert.Equal(new[] { "properties", "type" }, format.EnumerateObject().Select(p => p.Name).OrderBy(n => n, System.StringComparer.Ordinal));
+            Assert.Equal("object", format.GetProperty("type").GetString());
+            Assert.Equal(JsonValueKind.Object, format.GetProperty("properties").ValueKind);
+            Assert.Empty(format.GetProperty("properties").EnumerateObject());
         }
     }
 }
