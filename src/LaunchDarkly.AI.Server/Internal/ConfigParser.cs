@@ -192,6 +192,8 @@ namespace LaunchDarkly.AI.Server.Internal
             return new AiConfig(
                 new ModelConfig(modelName)
                 {
+                    // Passed on as written; a non-string region is absent.
+                    Region = GetString(model, "region"),
                     Parameters = GetDictionary(model, "parameters"),
                     Custom = GetDictionary(model, "custom"),
                 },
