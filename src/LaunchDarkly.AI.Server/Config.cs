@@ -84,6 +84,10 @@ namespace LaunchDarkly.AI.Server
             var client = await Lifecycle.GetLdClientAsync(cancellationToken).ConfigureAwait(false);
             var value = client.JsonVariation(_key, context, LdValue.Null);
             var (config, meta) = ConfigParser.Parse(_key, value);
+            if (config.JudgeConfiguration != null)
+            {
+                JudgeWarning.WarnOnce(_key);
+            }
 
             var handler = HandlerSelection.Select(ResolveHandlers(), config.Provider.Name, Modes.Normalize(meta.Mode));
             var trackData = InvokeTracking.CreateTrackData(config, meta);
