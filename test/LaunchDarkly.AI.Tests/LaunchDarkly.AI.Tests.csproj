@@ -4,7 +4,42 @@
     <RootNamespace>LaunchDarkly.AI.Tests</RootNamespace>
   </PropertyGroup>
 
+  <!-- Only the metapackage is referenced: every core type must reach this project through it. -->
   <ItemGroup>
     <ProjectReference Include="..\..\src\LaunchDarkly.AI\LaunchDarkly.AI.csproj" />
   </ItemGroup>
+
+  <!-- Generates CoreTypes.g.cs with a typeof() for every public type in the core package's
+       public API files, so this project fails to compile if the metapackage does not expose
+       one of them. -->
+  <PropertyGroup>
+    <CoreApiDir>$(MSBuildThisFileDirectory)..\..\src\LaunchDarkly.AI.Server\</CoreApiDir>
+  </PropertyGroup>
+
+  <Target Name="GenerateCoreTypeList" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <CoreTypesFile>$(IntermediateOutputPath)CoreTypes.g.cs</CoreTypesFile>
+    </PropertyGroup>
+    <ReadLinesFromFile File="$(CoreApiDir)PublicAPI.Shipped.txt">
+      <Output TaskParameter="Lines" ItemName="_CoreApiLine" />
+    </ReadLinesFromFile>
+    <ReadLinesFromFile File="$(CoreApiDir)PublicAPI.Unshipped.txt">
+      <Output TaskParameter="Lines" ItemName="_CoreApiLine" />
+    </ReadLinesFromFile>
+    <ItemGroup>
+      <_CoreTypeLine Include="@(_CoreApiLine)" Condition="!$([System.String]::Copy('%(Identity)').Contains('-&gt;')) And !$([System.String]::Copy('%(Identity)').StartsWith('#')) And !$([System.String]::Copy('%(Identity)').Contains(' ')) And !$([System.String]::Copy('%(Identity)').StartsWith('*'))" />
+      <_CoreTypeSource Include="namespace LaunchDarkly.AI.Tests%3B" />
+      <_CoreTypeSource Include="internal static class CoreTypes { internal static readonly System.Type[] All = new System.Type[] {" />
+      <_CoreTypeSource Include="@(_CoreTypeLine->'typeof(global::%(Identity)),')" />
+      <_CoreTypeSource Include="}%3B }" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(CoreTypesFile)" Lines="@(_CoreTypeSource)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+  </Target>
+
+  <Target Name="IncludeCoreTypeList" BeforeTargets="CoreCompile" AfterTargets="GenerateCoreTypeList">
+    <ItemGroup>
+      <Compile Include="$(CoreTypesFile)" />
+      <FileWrites Include="$(CoreTypesFile)" />
+    </ItemGroup>
+  </Target>
 </Project>
