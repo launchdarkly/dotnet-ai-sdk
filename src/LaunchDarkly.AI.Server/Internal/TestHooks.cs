@@ -49,6 +49,7 @@ namespace LaunchDarkly.AI.Server.Internal
             SdkInfoReporter.ResetReported();
             UsageReporter.Reset();
             JudgeWarning.Reset();
+            OnceKeys.Reset();
         }
     }
 }
