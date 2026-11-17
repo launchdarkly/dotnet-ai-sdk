@@ -1,0 +1,36 @@
+# Fails a pull request that breaks the public API of a package compared with its base
+# branch, unless the pull request has the `api-compatible` label, which marks the break
+# as intended (the job then passes with a warning). Adding or removing the label
+# re-runs the check.
+#
+# After the 1.0 release, package validation against the last published version
+# (EnablePackageValidation with PackageValidationBaselineVersion) is added to the build.
+name: API compatibility
+
+on:
+  pull_request:
+    branches: [main, 'feat/**']
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  api-compat:
+    name: Public API compatibility with the base branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The full history, so the base branch can be checked out in a worktree.
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Compare with the base branch
+        env:
+          API_COMPATIBLE: ${{ contains(github.event.pull_request.labels.*.name, 'api-compatible') }}
+        run: make api-compat BASE=${{ github.event.pull_request.base.sha }}

@@ -47,7 +47,7 @@ jobs:
         run: dotnet test LaunchDarkly.AI.Server.sln --no-restore -c Debug --blame-hang-timeout 60s --logger "console;verbosity=normal"
 
   checks:
-    name: Format, lint, public API, docs, pack
+    name: Format, lint, public API, docs, packaging
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -55,7 +55,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
+          # The 8.0 runtime runs the net8.0 consumer in the packaging check.
           global-json-file: global.json
+          dotnet-version: 8.0.x
 
       - name: Format check
         run: make format-check
@@ -71,3 +73,7 @@ jobs:
 
       - name: Pack
         run: make pack
+
+      # Installs each package from a local feed into a fresh project and runs it.
+      - name: Packaging check
+        run: make pack-check
