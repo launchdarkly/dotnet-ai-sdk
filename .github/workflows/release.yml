@@ -7,6 +7,8 @@
 #   - the push job runs in the protected "nuget-publish" environment, which needs an
 #     approval from a maintainer before it starts.
 # A dry run (the default when dispatched by hand) builds, signs and packs, and skips the push.
+# It still logs in to NuGet (trusted publishing), as the other .NET SDK releases do, so a
+# broken trusted-publisher policy shows up before anyone approves a real push.
 name: Release
 
 on:
@@ -86,6 +88,13 @@ jobs:
       # Packs the signed DLLs. LaunchDarkly.AI is a metapackage with no assembly.
       - name: Pack
         run: dotnet pack LaunchDarkly.AI.Server.sln --no-build -c Release -o nupkgs
+
+      # Runs on dry runs too, so the trusted-publishing OIDC exchange is validated early.
+      # The key it returns is not used in this job; only the gated publish job pushes.
+      - name: Validate NuGet login (trusted publishing)
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
+        with:
+          user: ${{ vars.NUGET_USER }}
 
       - name: Attest build provenance
         if: ${{ format('{0}', inputs.generate_provenance) == 'true' && format('{0}', inputs.dry_run) == 'false' }}
