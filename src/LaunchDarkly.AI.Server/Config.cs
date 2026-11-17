@@ -69,14 +69,28 @@ namespace LaunchDarkly.AI.Server
         /// <exception cref="AiConfigNotFoundException">The config has no variation for the context.</exception>
         /// <exception cref="AiConfigDisabledException">The variation is not enabled.</exception>
         /// <exception cref="NoHandlerException">No handler matches the variation.</exception>
-        public async Task<ProviderResponse> InvokeAsync(
+        public Task<ProviderResponse> InvokeAsync(
             string? input,
             Context context,
             IReadOnlyDictionary<string, object?>? variables = null,
             IReadOnlyList<HistoryMessage>? history = null,
             CancellationToken cancellationToken = default)
         {
-            UsageReporter.Report("client.config.invoke");
+            UsageReporter.Report(UsageReporter.ConfigInvoke);
+            return InvokeWithoutUsageAsync(input, context, variables, history, cancellationToken);
+        }
+
+        /// <summary>
+        /// <see cref="InvokeAsync"/> without its helper-usage event, for a provider package's
+        /// convenience wrapper, which reports its own helper instead.
+        /// </summary>
+        internal async Task<ProviderResponse> InvokeWithoutUsageAsync(
+            string? input,
+            Context context,
+            IReadOnlyDictionary<string, object?>? variables,
+            IReadOnlyList<HistoryMessage>? history,
+            CancellationToken cancellationToken)
+        {
             cancellationToken.ThrowIfCancellationRequested();
 
             var client = await Lifecycle.GetLdClientAsync(cancellationToken).ConfigureAwait(false);
