@@ -29,13 +29,15 @@ namespace LaunchDarkly.AI.Server.Tests
         private static async Task CallAsync(string name, FakeLdClient fake)
         {
             fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig();
-            var handler = Fixtures.RecordingHandler("OpenAI", HandlerModes.Messages);
             fake.ClearTracks();
             try
             {
                 switch (name)
                 {
                     case "Config.InvokeAsync":
+                        // Built here, not for every row: building it reports client.createHandler,
+                        // and each row must start from a client that has not reported its helper.
+                        var handler = Fixtures.RecordingHandler("OpenAI", HandlerModes.Messages);
                         var config = LdAi.Config(new ConfigArgs { Key = Fixtures.ConfigKey, Handler = handler });
                         fake.ClearTracks();
                         await config.InvokeAsync("hi", Fixtures.UserContext);
