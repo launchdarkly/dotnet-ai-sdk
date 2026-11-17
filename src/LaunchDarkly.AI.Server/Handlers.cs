@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using LaunchDarkly.AI.Server.Internal;
 
 namespace LaunchDarkly.AI.Server
 {
@@ -99,18 +100,31 @@ namespace LaunchDarkly.AI.Server
     /// </summary>
     public sealed class ProviderHandler
     {
-        private ProviderHandler()
+        private const int CaptureUnset = -1;
+
+        private readonly Func<HandlerRequest, CancellationToken, Task<HandlerResult>> _function;
+        private int _captureContent;
+
+        private ProviderHandler(
+            ProvidesFor providesFor,
+            Func<HandlerRequest, CancellationToken, Task<HandlerResult>> function,
+            bool? captureContent,
+            IReadOnlyList<string>? providers)
         {
+            ProvidesFor = providesFor;
+            _function = function;
+            _captureContent = Encode(captureContent);
+            Providers = providers;
         }
 
         /// <summary>The provider and mode this handler serves.</summary>
-        public ProvidesFor ProvidesFor => throw new NotImplementedException();
+        public ProvidesFor ProvidesFor { get; }
 
         /// <summary>
         /// For a wildcard handler, the provider names it serves, each once, in first-seen order.
         /// <see langword="null"/> when unscoped.
         /// </summary>
-        public IReadOnlyList<string>? Providers => throw new NotImplementedException();
+        public IReadOnlyList<string>? Providers { get; }
 
         /// <summary>
         /// The explicit content-capture override, or <see langword="null"/> when unset. Setting it
@@ -118,15 +132,20 @@ namespace LaunchDarkly.AI.Server
         /// </summary>
         public bool? CaptureContent
         {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
+            get => Decode(Volatile.Read(ref _captureContent));
+            set => Volatile.Write(ref _captureContent, Encode(value));
         }
 
         /// <summary>
         /// The content-capture setting in effect now: the override, else the configured default,
         /// else <see langword="true"/>.
         /// </summary>
-        public bool EffectiveCaptureContent => throw new NotImplementedException();
+        public bool EffectiveCaptureContent => CaptureContent ?? SdkState.CaptureContentDefault;
+
+        /// <summary>
+        /// Whether this is a wildcard handler, which serves any provider or the providers it lists.
+        /// </summary>
+        internal bool IsWildcard => ProvidesFor.Provider == ProvidesFor.Wildcard;
 
         /// <summary>
         /// Runs the handler. This counts as an AI invocation for the
@@ -135,9 +154,121 @@ namespace LaunchDarkly.AI.Server
         /// <param name="request">The request.</param>
         /// <param name="cancellationToken">Cancels the call.</param>
         /// <returns>The handler's result.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="request"/> is <see langword="null"/>.</exception>
         public Task<HandlerResult> InvokeAsync(HandlerRequest request, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
+            SdkState.MarkInvoked();
+            return _function(request, cancellationToken);
         }
+
+        /// <summary>
+        /// Whether this handler serves <paramref name="provider"/> in some mode: it names the
+        /// provider, or it is a wildcard that is unscoped or lists the provider.
+        /// </summary>
+        internal bool CoversProvider(string provider) =>
+            ProvidesFor.Provider == provider || WildcardCovers(provider);
+
+        /// <summary>
+        /// Whether this is a wildcard handler that is unscoped or lists <paramref name="provider"/>.
+        /// </summary>
+        internal bool WildcardCovers(string provider)
+        {
+            if (!IsWildcard)
+            {
+                return false;
+            }
+
+            if (Providers == null)
+            {
+                return true;
+            }
+
+            foreach (var name in Providers)
+            {
+                if (name == provider)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Builds a handler from a function. <paramref name="options"/> settings that are unset are
+        /// taken from <paramref name="inherit"/> when given.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException">The provider or mode is empty, or the provider list is invalid.</exception>
+        internal static ProviderHandler Create(
+            ProvidesFor providesFor,
+            Func<HandlerRequest, CancellationToken, Task<HandlerResult>> function,
+            CreateHandlerOptions? options,
+            ProviderHandler? inherit)
+        {
+            if (providesFor == null)
+            {
+                throw new ArgumentNullException(nameof(providesFor));
+            }
+
+            if (function == null)
+            {
+                throw new ArgumentNullException(nameof(function));
+            }
+
+            if (string.IsNullOrEmpty(providesFor.Provider) || string.IsNullOrEmpty(providesFor.Mode))
+            {
+                throw new ArgumentException("The provider and mode must both be non-empty.", nameof(providesFor));
+            }
+
+            var providers = options?.Providers != null ? NormalizeProviders(options.Providers) : inherit?.Providers;
+            var captureContent = options?.CaptureContent ?? inherit?.CaptureContent;
+            return new ProviderHandler(providesFor, function, captureContent, providers);
+        }
+
+        private static IReadOnlyList<string> NormalizeProviders(IReadOnlyList<string> providers)
+        {
+            if (providers.Count == 0)
+            {
+                throw new ArgumentException("The provider list must name at least one provider.", nameof(providers));
+            }
+
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var result = new List<string>(providers.Count);
+            foreach (var name in providers)
+            {
+                if (string.IsNullOrWhiteSpace(name) || name.Trim().Length != name.Length)
+                {
+                    throw new ArgumentException(
+                        "Each provider name must be non-blank, with no surrounding whitespace.", nameof(providers));
+                }
+
+                if (seen.Add(name))
+                {
+                    result.Add(name);
+                }
+            }
+
+            return result.AsReadOnly();
+        }
+
+        private static int Encode(bool? value) => value switch
+        {
+            null => CaptureUnset,
+            true => 1,
+            false => 0,
+        };
+
+        private static bool? Decode(int value) => value switch
+        {
+            CaptureUnset => null,
+            1 => true,
+            _ => false,
+        };
     }
 }

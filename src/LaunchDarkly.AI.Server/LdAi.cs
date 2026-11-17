@@ -142,7 +142,8 @@ namespace LaunchDarkly.AI.Server
             ProvidesFor providesFor,
             Func<HandlerRequest, CancellationToken, Task<HandlerResult>> handler)
         {
-            throw new NotImplementedException();
+            UsageReporter.Report("client.createHandler");
+            return ProviderHandler.Create(providesFor, handler ?? throw new ArgumentNullException(nameof(handler)), null, null);
         }
 
         /// <summary>
@@ -158,7 +159,12 @@ namespace LaunchDarkly.AI.Server
             Func<HandlerRequest, CancellationToken, Task<HandlerResult>> handler,
             CreateHandlerOptions options)
         {
-            throw new NotImplementedException();
+            UsageReporter.Report("client.createHandler");
+            return ProviderHandler.Create(
+                providesFor,
+                handler ?? throw new ArgumentNullException(nameof(handler)),
+                options ?? throw new ArgumentNullException(nameof(options)),
+                null);
         }
 
         /// <summary>
@@ -170,7 +176,13 @@ namespace LaunchDarkly.AI.Server
         /// <returns>The handler.</returns>
         public static ProviderHandler CreateHandler(ProvidesFor providesFor, ProviderHandler handler)
         {
-            throw new NotImplementedException();
+            UsageReporter.Report("client.createHandler");
+            if (handler == null)
+            {
+                throw new ArgumentNullException(nameof(handler));
+            }
+
+            return ProviderHandler.Create(providesFor, handler.InvokeAsync, null, handler);
         }
 
         /// <summary>
@@ -184,7 +196,13 @@ namespace LaunchDarkly.AI.Server
         /// <exception cref="ArgumentException">The provider list is empty, or holds a blank or padded name.</exception>
         public static ProviderHandler CreateHandler(ProvidesFor providesFor, ProviderHandler handler, CreateHandlerOptions options)
         {
-            throw new NotImplementedException();
+            UsageReporter.Report("client.createHandler");
+            if (handler == null)
+            {
+                throw new ArgumentNullException(nameof(handler));
+            }
+
+            return ProviderHandler.Create(providesFor, handler.InvokeAsync, options ?? throw new ArgumentNullException(nameof(options)), handler);
         }
 
         /// <summary>
