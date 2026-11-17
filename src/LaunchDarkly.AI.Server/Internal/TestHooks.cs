@@ -40,7 +40,7 @@ namespace LaunchDarkly.AI.Server.Internal
         /// </summary>
         /// <remarks>
         /// Each piece of process-wide state (the singleton, the attempt in flight, the reported
-        /// sets, the configured defaults and the lock) is cleared here; anything new must be too.
+        /// sets, the configured defaults, the lock and the judge warnings) is cleared here; anything new must be too.
         /// </remarks>
         internal static void Reset()
         {
@@ -48,6 +48,7 @@ namespace LaunchDarkly.AI.Server.Internal
             SdkState.Reset();
             SdkInfoReporter.ResetReported();
             UsageReporter.Reset();
+            JudgeWarning.Reset();
         }
     }
 }

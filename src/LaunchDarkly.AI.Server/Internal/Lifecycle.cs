@@ -145,6 +145,7 @@ namespace LaunchDarkly.AI.Server.Internal
             SdkState.Reset();
             SdkInfoReporter.ResetReported();
             UsageReporter.Reset();
+            JudgeWarning.Reset();
             return client;
         }
 
