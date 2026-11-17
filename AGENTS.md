@@ -38,6 +38,7 @@ src/<Package>/               one folder per package (PublicAPI.Shipped.txt / Pub
 test/Directory.Build.props   xUnit settings and test target frameworks
 test/<Package>.Tests/        one xUnit project per package
 examples/                    runnable examples (none yet)
+scripts/                     pack-check.sh (packaging check), api-compat.sh (breaking-change check)
 docs-src/, docfx.json, index.md, toc.yml    API reference (docfx)
 .github/workflows/           CI, PR-title lint, docs, release (not run until the first push)
 ```
@@ -52,7 +53,9 @@ docs-src/, docfx.json, index.md, toc.yml    API reference (docfx)
 | `make format` / `make format-check` | Apply / verify whitespace and code style (`.editorconfig`) |
 | `make api-check` | Regenerate `PublicAPI.*.txt` and fail if they differ from what is committed |
 | `make docs` | docfx API reference into `docs/` (docfx is pinned in `.config/dotnet-tools.json`) |
+| `make api-compat BASE=<ref>` | Breaking-change check of the public API against a git ref (default `main`), with ApiCompat |
 | `make pack` | NuGet packages into `nupkgs/` |
+| `make pack-check` | Install each package from a local feed into a fresh project, build and run it |
 
 `TESTFRAMEWORK=net8.0 make test` runs one target framework. `BUILDFRAMEWORKS`
 does the same for the libraries. The pre-commit hook (`lefthook.yml`) runs
@@ -64,8 +67,10 @@ does the same for the libraries. The pre-commit hook (`lefthook.yml`) runs
   build fails on a public change that isn't recorded (RS0016/RS0017). At 1.0 the
   release moves the entries to `PublicAPI.Shipped.txt`.
 - Every public member has an XML doc comment; missing or invalid docs fail the build.
-- Breaking-change checks against the last release (package validation) start
-  after 1.0, the first published version.
+- Breaking changes against the base branch fail the API compatibility check
+  (`make api-compat`, and a CI job on every pull request) unless the pull request
+  has the `api-compatible` label. Checks against the last release (package
+  validation) start after 1.0, the first published version.
 - Deprecate with `[Obsolete("Use X.")]`, never by removing a shipped member.
 
 ## Versioning and release
@@ -76,7 +81,8 @@ does the same for the libraries. The pre-commit hook (`lefthook.yml`) runs
   only when dispatched by hand, and its first run is the 1.0 release.
 - The release workflow strong-names the assemblies with the shared key, signs them
   with Authenticode, packs, attests provenance and pushes to NuGet behind a
-  protected environment.
+  protected environment. The repository settings this needs are listed in
+  CONTRIBUTING.md ("For maintainers: repository settings").
 
 ## Deviations from established LaunchDarkly .NET practice
 

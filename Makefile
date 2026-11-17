@@ -7,7 +7,7 @@ DOTNET ?= dotnet
 # Paths of the public API files that api-check keeps in sync with the code.
 PUBLIC_API_FILES := $(wildcard src/*/PublicAPI.*.txt)
 
-.PHONY: build test lint format format-check api-check docs pack clean restore tools
+.PHONY: build test lint format format-check api-check api-compat docs pack pack-check clean restore tools
 
 restore:
 	$(DOTNET) restore $(SOLUTION)
@@ -47,12 +47,26 @@ api-check: restore
 		echo "Public API files are out of date. Review the diff above and commit it if the change is intended."; \
 		exit 1; }
 
+# Breaking-change check of the public API against a git ref (default: main), with
+# ApiCompat (pinned in .config/dotnet-tools.json). The ref is built in a temporary
+# worktree; the working tree is the new side. API_COMPATIBLE=true accepts an intended
+# break, as the api-compatible pull-request label does in CI.
+BASE ?= main
+api-compat: tools
+	scripts/api-compat.sh $(BASE)
+
 # API reference docs with docfx (pinned in .config/dotnet-tools.json). Output goes to docs/.
 docs: tools
 	$(DOTNET) tool run docfx docfx.json
 
 pack: build
 	$(DOTNET) pack $(SOLUTION) --no-build -c $(CONFIGURATION) -o nupkgs
+
+# Packaging check: pack into a local feed, install each package into a fresh console
+# project from that feed plus nuget.org, build and run it. Fails on a missing or
+# undeclared dependency, and checks the metapackage carries no assembly.
+pack-check:
+	scripts/pack-check.sh
 
 clean:
 	$(DOTNET) clean $(SOLUTION)
