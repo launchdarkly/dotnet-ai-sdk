@@ -10,15 +10,23 @@ namespace LaunchDarkly.AI.Server.Internal
     /// </summary>
     internal static class UsageParser
     {
-        // Tried in order; the first row whose input and output keys are both present wins. Each
-        // cache column lists every accepted spelling, because an unlisted one would silently read
-        // as zero. The fold always adds cache on top of input, so a handler returns either raw
-        // usage with its cache fields, or an input that already includes cache without them.
-        private static readonly (string Input, string Output, string[]? CacheRead, string[]? CacheCreation)[] _rows =
+        // Every accepted spelling of the two cache fields, Anthropic's and Bedrock Converse's.
+        // An unlisted spelling would silently read as zero and shrink the input.
+        private static readonly string[] _cacheRead = { "cache_read_input_tokens", "cacheReadInputTokens" };
+        private static readonly string[] _cacheCreation =
         {
-            ("input_tokens", "output_tokens", new[] { "cache_read_input_tokens" }, new[] { "cache_creation_input_tokens" }),
-            ("inputTokens", "outputTokens", new[] { "cacheReadInputTokens" }, new[] { "cacheCreationInputTokens", "cacheWriteInputTokens" }),
-            ("input", "output", null, null),
+            "cache_creation_input_tokens", "cacheCreationInputTokens", "cacheWriteInputTokens",
+        };
+
+        // Tried in order; the first row whose input and output keys are both present wins. Cache
+        // tokens fold into input whichever provider row wins. The fold is provider-blind, so a
+        // handler returns either raw usage with its cache fields, or an input that already
+        // includes cache without them.
+        private static readonly (string Input, string Output, bool FoldsCache)[] _rows =
+        {
+            ("input_tokens", "output_tokens", true),
+            ("inputTokens", "outputTokens", true),
+            ("input", "output", false),
         };
 
         /// <summary>
@@ -34,7 +42,7 @@ namespace LaunchDarkly.AI.Server.Internal
                 return new TokenUsage();
             }
 
-            foreach (var (inputKey, outputKey, cacheReadKeys, cacheCreationKeys) in _rows)
+            foreach (var (inputKey, outputKey, foldsCache) in _rows)
             {
                 if (!raw.ContainsKey(inputKey) || !raw.ContainsKey(outputKey))
                 {
@@ -42,6 +50,8 @@ namespace LaunchDarkly.AI.Server.Internal
                 }
 
                 var uncached = NumberOrZero(raw[inputKey]);
+                var cacheReadKeys = foldsCache ? _cacheRead : null;
+                var cacheCreationKeys = foldsCache ? _cacheCreation : null;
                 var cacheRead = Sum(raw, cacheReadKeys);
                 var cacheCreation = Sum(raw, cacheCreationKeys);
                 var input = uncached + cacheRead + cacheCreation;
