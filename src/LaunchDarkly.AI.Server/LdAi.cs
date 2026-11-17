@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
+using LaunchDarkly.AI.Server.Internal;
 using LaunchDarkly.Sdk;
 using LaunchDarkly.Sdk.Server.Interfaces;
 
@@ -20,9 +21,7 @@ namespace LaunchDarkly.AI.Server
         /// <returns>The AI client.</returns>
         /// <exception cref="LdAiException">No <c>LD_SDK_KEY</c>, or the LaunchDarkly client did not initialize.</exception>
         public static Task<ILdAiClient> InitClientAsync()
-        {
-            throw new NotImplementedException();
-        }
+        => InitClientAsync(new InitOptions(), CancellationToken.None);
 
         /// <summary>
         /// Initializes the process-wide client with an SDK key, or returns it when it already
@@ -32,9 +31,7 @@ namespace LaunchDarkly.AI.Server
         /// <returns>The AI client.</returns>
         /// <exception cref="LdAiException">No SDK key, or the LaunchDarkly client did not initialize.</exception>
         public static Task<ILdAiClient> InitClientAsync(InitOptions options)
-        {
-            throw new NotImplementedException();
-        }
+        => InitClientAsync(options, CancellationToken.None);
 
         /// <summary>
         /// Initializes the process-wide client with an SDK key, or returns it when it already
@@ -46,7 +43,12 @@ namespace LaunchDarkly.AI.Server
         /// <exception cref="LdAiException">No SDK key, or the LaunchDarkly client did not initialize.</exception>
         public static Task<ILdAiClient> InitClientAsync(InitOptions options, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            if (options is null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
+
+            return Lifecycle.InitAsync(options, cancellationToken);
         }
 
         /// <summary>
@@ -56,9 +58,7 @@ namespace LaunchDarkly.AI.Server
         /// <param name="client">The LaunchDarkly server-side client.</param>
         /// <returns>The AI client.</returns>
         public static Task<ILdAiClient> InitClientAsync(ILdClient client)
-        {
-            throw new NotImplementedException();
-        }
+        => InitClientAsync(client, CancellationToken.None);
 
         /// <summary>
         /// Initializes the process-wide client with a LaunchDarkly client the application built.
@@ -69,7 +69,17 @@ namespace LaunchDarkly.AI.Server
         /// <returns>The AI client.</returns>
         public static Task<ILdAiClient> InitClientAsync(ILdClient client, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            if (client is null)
+            {
+                throw new ArgumentNullException(nameof(client));
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return Task.FromCanceled<ILdAiClient>(cancellationToken);
+            }
+
+            return Task.FromResult(Lifecycle.InitWithClient(client));
         }
 
         /// <summary>
@@ -78,9 +88,8 @@ namespace LaunchDarkly.AI.Server
         /// <returns>The AI client.</returns>
         /// <exception cref="InvalidOperationException">No client has been initialized.</exception>
         public static ILdAiClient GetClient()
-        {
-            throw new NotImplementedException();
-        }
+        => Lifecycle.Current ?? throw new InvalidOperationException(
+                "No LaunchDarkly AI client has been initialized. Call LdAi.InitClientAsync first.");
 
         /// <summary>
         /// Flushes and closes the LaunchDarkly client, clears the singleton and restores the
@@ -89,9 +98,7 @@ namespace LaunchDarkly.AI.Server
         /// <param name="cancellationToken">Cancels the wait.</param>
         /// <returns>A task that completes when the client is closed.</returns>
         public static Task ShutdownAsync(CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
+        => ShutdownAsync(null, cancellationToken);
 
         /// <summary>
         /// Sets process-wide defaults. Different options are refused after the first AI invocation.
@@ -99,9 +106,7 @@ namespace LaunchDarkly.AI.Server
         /// <param name="options">The defaults.</param>
         /// <exception cref="ConfigureLockedException">An AI invocation has run and the options differ.</exception>
         public static void Configure(SdkOptions options)
-        {
-            throw new NotImplementedException();
-        }
+        => SdkState.Configure(options);
 
         /// <summary>
         /// Binds an AI Config to its handlers.
@@ -123,7 +128,8 @@ namespace LaunchDarkly.AI.Server
         /// <returns>The variation, or the reason it could not be read.</returns>
         public static Task<InspectResult> InspectConfigAsync(string key, Context context, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            UsageReporter.Report(UsageReporter.InspectConfig);
+            return InspectConfigInternalAsync(key, context, cancellationToken);
         }
 
         /// <summary>
@@ -190,7 +196,12 @@ namespace LaunchDarkly.AI.Server
         /// <returns>The rendered text.</returns>
         public static string ParseTemplate(string template, IReadOnlyDictionary<string, object?>? variables)
         {
-            throw new NotImplementedException();
+            if (template is null)
+            {
+                throw new ArgumentNullException(nameof(template));
+            }
+
+            return Template.Render(template, variables);
         }
 
         /// <summary>
@@ -202,7 +213,17 @@ namespace LaunchDarkly.AI.Server
         [EditorBrowsable(EditorBrowsableState.Never)]
         public static void RegisterAiSdkPackage(string name, string version)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrEmpty(name))
+            {
+                throw new ArgumentException("A package name is required.", nameof(name));
+            }
+
+            if (string.IsNullOrEmpty(version))
+            {
+                throw new ArgumentException("A package version is required.", nameof(version));
+            }
+
+            SdkInfoReporter.Register(name, version);
         }
 
         /// <summary>
@@ -215,7 +236,62 @@ namespace LaunchDarkly.AI.Server
         [EditorBrowsable(EditorBrowsableState.Never)]
         public static void ReportUsage(string helper, string? packageName = null, string? packageVersion = null)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrEmpty(helper))
+            {
+                throw new ArgumentException("A helper usage ID is required.", nameof(helper));
+            }
+
+            UsageReporter.Report(helper, packageName, packageVersion);
+        }
+
+        /// <summary>
+        /// <see cref="InspectConfigAsync(string, Context, CancellationToken)"/> without the usage
+        /// report, for SDK code.
+        /// </summary>
+        /// <param name="key">The AI Config key.</param>
+        /// <param name="context">The evaluation context.</param>
+        /// <param name="cancellationToken">Cancels the call.</param>
+        /// <returns>The variation, or the reason it could not be read.</returns>
+        internal static async Task<InspectResult> InspectConfigInternalAsync(string key, Context context, CancellationToken cancellationToken)
+        {
+            if (key is null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                var client = await Lifecycle.GetLdClientAsync(cancellationToken).ConfigureAwait(false);
+                var variation = client.JsonVariation(key, context, LdValue.Null);
+                return ConfigParser.Inspect(key, variation);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                return new InspectResult { Error = e };
+            }
+        }
+
+        /// <summary>
+        /// Clears the singleton and restores the built-in defaults at once, then flushes and closes
+        /// the client off the caller's thread.
+        /// </summary>
+        /// <param name="only">When set, shuts down only if this instance is still the singleton.</param>
+        /// <param name="cancellationToken">Cancels the wait, not the close.</param>
+        /// <returns>A task that completes when the client is closed.</returns>
+        internal static Task ShutdownAsync(LdAiClient? only, CancellationToken cancellationToken)
+        {
+            var client = Lifecycle.Detach(only);
+            if (client is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            return Task.Run(() => Lifecycle.Teardown(client), CancellationToken.None).WaitForAsync(cancellationToken);
         }
     }
 }

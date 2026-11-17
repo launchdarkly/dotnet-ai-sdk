@@ -22,13 +22,6 @@ namespace LaunchDarkly.AI.Server.Internal
         internal static ILogAdapter? LogAdapter;
 
         /// <summary>
-        /// The client <see cref="SetClient"/> installed, or <see langword="null"/>. The lifecycle
-        /// reads it as the singleton; it exists only so tests can install a client with no side
-        /// effects.
-        /// </summary>
-        internal static ILdClient? InstalledClient { get; private set; }
-
-        /// <summary>
         /// Installs <paramref name="client"/> as the singleton without any of the init side
         /// effects: no package-information or usage events are sent, and nothing held for
         /// reporting is flushed. Helpers called after it see a client, as after an init.
@@ -36,7 +29,7 @@ namespace LaunchDarkly.AI.Server.Internal
         /// <param name="client">The client to install.</param>
         internal static void SetClient(ILdClient client)
         {
-            InstalledClient = client ?? throw new ArgumentNullException(nameof(client));
+            Lifecycle.InstallForTests(client ?? throw new ArgumentNullException(nameof(client)));
         }
 
         /// <summary>
@@ -46,13 +39,15 @@ namespace LaunchDarkly.AI.Server.Internal
         /// <see cref="ClientFactory"/> and <see cref="LogAdapter"/> are left as the test set them.
         /// </summary>
         /// <remarks>
-        /// The stubs keep no other process-wide state yet. Each piece of state the implementation
-        /// adds (the attempt in flight, the reported sets, the configured defaults and the lock)
-        /// must be cleared here too.
+        /// Each piece of process-wide state (the singleton, the attempt in flight, the reported
+        /// sets, the configured defaults and the lock) is cleared here; anything new must be too.
         /// </remarks>
         internal static void Reset()
         {
-            InstalledClient = null;
+            Lifecycle.ResetForTests();
+            SdkState.Reset();
+            SdkInfoReporter.ResetReported();
+            UsageReporter.Reset();
         }
     }
 }
