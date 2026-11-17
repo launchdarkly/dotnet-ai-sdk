@@ -32,6 +32,12 @@ namespace LaunchDarkly.AI.Server
         }
 
         /// <summary>
+        /// For the tracking stub the SDK builds from a <see cref="NativeTool"/>, that native tool, so a
+        /// provider package can recover the provider's tool name. <see langword="null"/> otherwise.
+        /// </summary>
+        internal NativeTool? WrappedNativeTool => throw new NotImplementedException();
+
+        /// <summary>
         /// Calls the tool.
         /// </summary>
         /// <param name="arguments">The arguments the model sent.</param>
