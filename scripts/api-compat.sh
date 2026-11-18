@@ -5,9 +5,14 @@
 #
 # A breaking change to the public API (a removed or changed type or member, a
 # renamed parameter, a dropped target framework) fails the check. An addition is not
-# breaking. Set API_COMPATIBLE=true to accept a breaking change on purpose: in CI
-# that is the `api-compatible` pull-request label. The check still runs and reports
-# what it found.
+# breaking. A breaking change passes when it is declared:
+#
+#   - PR_TITLE is a conventional-commit title that marks a breaking change with `!`
+#     (`feat!: ...`, `fix(client)!: ...`); in CI, the pull request's title;
+#   - API_COMPATIBLE=true: in CI, the `api-compatible` pull-request label, which an owner
+#     applies to a flagged change they judge compatible.
+#
+# The check still runs and reports what it found.
 #
 # Usage: scripts/api-compat.sh <base-ref>     (for example origin/main, or a commit)
 #        APICOMPAT_ARGS="--suppression-file x.xml" passes extra arguments to ApiCompat.
@@ -150,12 +155,21 @@ if [ "${#failed[@]}" -eq 0 ]; then
 fi
 
 echo "api-compat: breaking changes in: ${failed[*]}"
-if [ "${API_COMPATIBLE:-false}" = "true" ]; then
-  echo "api-compat: accepted, because the change is marked as intended (API_COMPATIBLE=true / the api-compatible label)."
+# A conventional-commit type, an optional scope, then `!` before the colon.
+title_pattern='^[a-z]+(\([^)]*\))?!: '
+accepted_by=""
+if [[ "${PR_TITLE:-}" =~ $title_pattern ]]; then
+  accepted_by="the pull request title, which declares a breaking change (!)"
+elif [ "${API_COMPATIBLE:-false}" = "true" ]; then
+  accepted_by="the api-compatible label (API_COMPATIBLE=true)"
+fi
+if [ -n "$accepted_by" ]; then
+  echo "api-compat: accepted, because the break is declared by $accepted_by."
   if [ -n "${GITHUB_ACTIONS:-}" ]; then
-    echo "::warning title=Breaking API change accepted::Breaking changes in ${failed[*]} were accepted by the api-compatible label."
+    echo "::warning title=Breaking API change accepted::Breaking changes in ${failed[*]} were accepted by $accepted_by."
   fi
   exit 0
 fi
-echo "api-compat: if the break is intended, add the api-compatible label to the pull request (locally: API_COMPATIBLE=true)."
+echo "api-compat: if the break is intended, mark the pull request title with ! (feat!: ..., fix(scope)!: ...; locally: PR_TITLE='feat!: ...')."
+echo "api-compat: if an owner judges the flagged change compatible, they add the api-compatible label (locally: API_COMPATIBLE=true)."
 exit 1

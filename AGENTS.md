@@ -71,7 +71,8 @@ does the same for the libraries. The pre-commit hook (`lefthook.yml`) runs
 - Every public member has an XML doc comment; missing or invalid docs fail the build.
 - Breaking changes against the base branch fail the API compatibility check
   (`make api-compat`, and a CI job on every pull request) unless the pull request
-  has the `api-compatible` label. Checks against the last release (package
+  title declares the break with `!` (`feat!: ...`) or a maintainer applied the
+  `api-compatible` label to a flagged change they judge compatible. Checks against the last release (package
   validation) start after 1.0, the first published version.
 - Deprecate with `[Obsolete("Use X.")]`, never by removing a shipped member.
 

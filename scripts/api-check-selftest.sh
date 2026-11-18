@@ -8,8 +8,8 @@
 #   check 1, the report is current: `make build` (RS0016/RS0017 as errors) and
 #            `make api-check`, with `make api-update` as the update command;
 #   check 2, a breaking change is declared: scripts/api-compat.sh against the fixture's
-#            base commit, with API_COMPATIBLE=true standing in for the api-compatible
-#            label.
+#            base commit, with PR_TITLE standing in for the pull request title and
+#            API_COMPATIBLE=true for the api-compatible label.
 #
 # Each case starts from the base commit, changes the fixture, runs a check and compares
 # the outcome with the expected one. The script prints one "ok" or "not ok" line per case
@@ -21,7 +21,7 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DOTNET="${DOTNET:-dotnet}"
 export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
-unset API_COMPATIBLE GITHUB_ACTIONS
+unset API_COMPATIBLE PR_TITLE GITHUB_ACTIONS
 
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/api-check-selftest.XXXXXX")"
 FIX="$WORK/repo"
@@ -244,8 +244,8 @@ chmod u+rw "$LIB/PublicAPI.Unshipped.txt"
 
 compat() { run env "$@" scripts/api-compat.sh base; }
 
-# <kind> <old text> <new text>: undeclared it fails with a compatibility finding; with
-# API_COMPATIBLE=true it passes and says it accepted the break.
+# <kind> <old text> <new text>: undeclared it fails with a compatibility finding; declared
+# by the title (feat!:) or with API_COMPATIBLE=true it passes and says it accepted it.
 breaking() {
   local kind="$1"
   reset_fixture
@@ -257,14 +257,21 @@ breaking() {
   if [ "$status" -ne 1 ]; then not_ok "$c" "exit status $status, expected 1"
   elif ! grep -q 'breaking changes in: Fixture.Api' "$LOG"; then not_ok "$c" "Fixture.Api is not reported as breaking"
   else ok "$c"; fi
-  c="check 2: $kind passes when declared (API_COMPATIBLE=true)"
   if [ "$status" -ne 1 ]; then
-    # Nothing was detected, so there is no break to accept: one failure, not two.
-    echo "skip - $c: the break was not detected undeclared"
+    # Nothing was detected, so there is no break to accept: one failure, not three.
+    echo "skip - check 2: $kind passes when declared: the break was not detected undeclared"
     return
   fi
-  compat API_COMPATIBLE=true
-  status=$?
+  declared "check 2: $kind passes when the title declares it (feat!:)" PR_TITLE='feat!: change the API'
+  declared "check 2: $kind passes with the api-compatible label (API_COMPATIBLE=true)" API_COMPATIBLE=true
+}
+
+# <case> <env assignments...>: the check passes and says it accepted the break.
+declared() {
+  local c="$1"
+  shift
+  compat "$@"
+  local status=$?
   if [ "$status" -ne 0 ]; then not_ok "$c" "exit status $status, expected 0"
   elif ! grep -q 'accepted' "$LOG"; then not_ok "$c" "the output does not say the break was accepted"
   else ok "$c"; fi
@@ -313,6 +320,20 @@ status=$?
 if [ "$status" -ne 1 ]; then not_ok "$c" "exit status $status, expected 1"
 else ok "$c"; fi
 
+# Titles: a scope before the ! also declares a break; a title without ! does not, nor
+# does a ! that is not right before the colon.
+reset_fixture
+mutate '        public static int Sub(int a, int b) => a - b;' ''
+update_report
+declared "check 2: a title with a scope and ! (fix(client)!:) declares a break" PR_TITLE='fix(client)!: remove Sub'
+for title in 'feat: remove Sub' 'feat: remove Sub!' 'feat(!): remove Sub'; do
+  c="check 2: the title '$title' does not declare a break"
+  compat PR_TITLE="$title"
+  status=$?
+  if [ "$status" -ne 1 ]; then not_ok "$c" "exit status $status, expected 1"
+  else ok "$c"; fi
+done
+
 c="check 2: a package that is no longer packed fails"
 reset_fixture
 sed -i 's|<IsPackable>true</IsPackable>|<IsPackable>false</IsPackable>|' "$LIB/Fixture.Api.csproj"
@@ -330,10 +351,15 @@ grep -n 'API_COMPATIBLE' "$WORKFLOW" >"$LOG"
 if grep -Fq "API_COMPATIBLE: \${{ contains(github.event.pull_request.labels.*.name, 'api-compatible') }}" "$WORKFLOW"; then ok "$c"
 else not_ok "$c" "the workflow does not set API_COMPATIBLE from the api-compatible label"; fi
 
-c="check 2 in CI: a PR title that declares a breaking change (!) passes the check"
+c="check 2 in CI: the PR title reaches the check, through the environment"
 grep -n 'title' "$WORKFLOW" >"$LOG" || true
-if grep -q 'github.event.pull_request.title' "$WORKFLOW"; then ok "$c"
-else not_ok "$c" "the workflow never reads the PR title, so a declared break (feat!:) still fails"; fi
+if grep -Fq "PR_TITLE: \${{ github.event.pull_request.title }}" "$WORKFLOW"; then ok "$c"
+else not_ok "$c" "the workflow does not set PR_TITLE from the pull request title, so a declared break (feat!:) still fails"; fi
+
+c="check 2 in CI: editing the PR title re-runs the check"
+grep -n 'types:' "$WORKFLOW" >"$LOG" || true
+if grep -Eq '^ *types: \[.*\bedited\b.*\]' "$WORKFLOW"; then ok "$c"
+else not_ok "$c" "the workflow does not run on the edited event"; fi
 
 echo
 echo "api-check-selftest: ${passed} passed, ${#failed[@]} failed"
