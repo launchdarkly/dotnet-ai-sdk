@@ -93,7 +93,13 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Internal
                     .ConfigureAwait(false);
 
                 root?.SetTag("gen_ai.response.model", responseModel ?? modelId);
-                Telemetry.SetUsage(root, new TokenUsage { Input = input, Output = output, Total = input + output });
+                Telemetry.SetUsage(root, new TokenUsage
+                {
+                    Input = input,
+                    Output = output,
+                    Total = input + output,
+                    InputDetails = cacheRead > 0 ? new InputTokenDetails { Uncached = uncached, CacheRead = cacheRead } : null,
+                });
                 Telemetry.SetOk(root);
 
                 return new HandlerResult

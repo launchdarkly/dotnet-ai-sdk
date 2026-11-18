@@ -233,6 +233,22 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
             Assert.Single(_spans.Finished, s => s.DisplayName == "invoke_agent");
         }
 
+        [Fact]
+        public async Task RootCarriesTheRunsCacheTokens()
+        {
+            Chat.Then(_ => new Microsoft.Extensions.AI.ChatResponse(new Microsoft.Extensions.AI.ChatMessage(Microsoft.Extensions.AI.ChatRole.Assistant, "ok"))
+            {
+                Usage = new Microsoft.Extensions.AI.UsageDetails { InputTokenCount = 10, OutputTokenCount = 5, TotalTokenCount = 15, CachedInputTokenCount = 4 },
+            });
+            await RunAsync(Config());
+
+            foreach (var span in new[] { _spans.Root, _spans.Named("chat ").Single() })
+            {
+                Assert.Equal(10L, Convert.ToInt64(span.Attr("gen_ai.usage.input_tokens")));
+                Assert.Equal(4L, Convert.ToInt64(span.Attr("gen_ai.usage.cache_read.input_tokens")));
+            }
+        }
+
         private sealed class Cyclic
         {
             public Cyclic? Self { get; set; }
