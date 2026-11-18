@@ -15,7 +15,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Internal
     /// <c>temperature</c>, <c>max_tokens</c> (<see cref="ChatOptions.MaxOutputTokens"/>), <c>top_p</c>,
     /// <c>top_k</c>, <c>frequency_penalty</c>, <c>presence_penalty</c>, <c>seed</c>, and
     /// <c>stop_sequences</c> or <c>stop</c> (<see cref="ChatOptions.StopSequences"/>; <c>stop_sequences</c>
-    /// wins). A value of the wrong JSON type is dropped.</item>
+    /// wins). A value of the wrong JSON type, or a number out of range, is dropped.</item>
     /// <item><b>Owned</b> by the handler, never read from parameters: <see cref="ChatOptions.ModelId"/>,
     /// <see cref="ChatOptions.Instructions"/>, <see cref="ChatOptions.Tools"/>,
     /// <see cref="ChatOptions.ToolMode"/> and <see cref="ChatOptions.ResponseFormat"/>.</item>
@@ -67,10 +67,18 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Internal
             return options;
         }
 
-        private static float? Float(IReadOnlyDictionary<string, JsonElement> parameters, string key) =>
-            parameters.TryGetValue(key, out var value) && value.ValueKind == JsonValueKind.Number
-                ? (float)value.GetDouble()
-                : null;
+        // A number that is not finite as a float (1e400, or 1e100 once narrowed) is dropped, like any
+        // other unusable value. TryGetDouble never throws, where GetDouble can on .NET Framework.
+        private static float? Float(IReadOnlyDictionary<string, JsonElement> parameters, string key)
+        {
+            if (!parameters.TryGetValue(key, out var value) || value.ValueKind != JsonValueKind.Number || !value.TryGetDouble(out var number))
+            {
+                return null;
+            }
+
+            var narrowed = (float)number;
+            return float.IsInfinity(narrowed) || float.IsNaN(narrowed) ? null : narrowed;
+        }
 
         private static int? Int(IReadOnlyDictionary<string, JsonElement> parameters, string key) =>
             parameters.TryGetValue(key, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var number)

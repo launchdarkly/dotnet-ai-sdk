@@ -95,6 +95,16 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
             Assert.Null(options.StopSequences);
         }
 
+        [Theory]
+        [InlineData("{\"temperature\":1e400}")]
+        [InlineData("{\"temperature\":-1e400}")]
+        [InlineData("{\"temperature\":1e100}")]
+        public async Task OutOfRangeNumbersAreDropped(string parametersJson)
+        {
+            var options = await OptionsFor(parametersJson);
+            Assert.Null(options.Temperature);
+        }
+
         [Fact]
         public async Task UnknownKeysAreDropped()
         {
