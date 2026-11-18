@@ -115,7 +115,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI
             }
 
             PackageRegistration.Register();
-            var runner = new ChatClientRunner(clientFactory, PendingToolLoop.Instance);
+            var runner = new ChatClientRunner(clientFactory, FunctionInvokingToolLoop.Instance);
             ProviderHandler? handler = null;
             handler = ProviderHandler.Create(
                 new ProvidesFor(ProvidesFor.Wildcard, HandlerModes.Messages),

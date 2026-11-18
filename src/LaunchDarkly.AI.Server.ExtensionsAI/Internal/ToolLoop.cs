@@ -70,30 +70,4 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Internal
         /// <returns>The model's final response.</returns>
         Task<ChatResponse> RunAsync(ToolLoopRequest request, CancellationToken cancellationToken);
     }
-
-    /// <summary>
-    /// The tool loop until one is chosen: one turn, returned when the model answers without a tool
-    /// call. A tool call throws <see cref="NotImplementedException"/>.
-    /// </summary>
-    internal sealed class PendingToolLoop : IToolLoop
-    {
-        /// <summary>The one instance.</summary>
-        internal static readonly PendingToolLoop Instance = new PendingToolLoop();
-
-        private PendingToolLoop()
-        {
-        }
-
-        /// <inheritdoc/>
-        public async Task<ChatResponse> RunAsync(ToolLoopRequest request, CancellationToken cancellationToken)
-        {
-            var response = await request.Turn(request.Messages, request.Options, cancellationToken).ConfigureAwait(false);
-            if (response.Messages.SelectMany(m => m.Contents).OfType<FunctionCallContent>().Any())
-            {
-                throw new NotImplementedException("The tool loop is not implemented yet.");
-            }
-
-            return response;
-        }
-    }
 }

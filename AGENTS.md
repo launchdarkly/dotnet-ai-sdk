@@ -98,6 +98,28 @@ Each is deliberate. None conflicts with a company rule.
 | Hand-written fakes instead of Moq | Fakes are readable, need no dynamic proxies, and work unchanged on every target framework. |
 | Release builds without the key file are public-signed with `LaunchDarkly.pk` | A local Release build has the same assembly identity as the published one without needing the private key. |
 
+## Design decisions
+
+- **The messages-mode tool loop runs on `FunctionInvokingChatClient`.** `LaunchDarkly.AI.Server.ExtensionsAI`
+  depends on `Microsoft.Extensions.AI` for it; the core package does not. The loop sits behind an internal
+  `IToolLoop` seam. The handler keeps the `chat` and `execute_tool` spans, usage, tool scoping and
+  tool-result text, and the client's own options cover the rest: tool exceptions are rethrown
+  (`MaximumConsecutiveErrorsPerRequest = 0`), calls in one response run in order
+  (`AllowConcurrentInvocation = false`), and an unknown tool ends the loop (`TerminateOnUnknownCalls`).
+  Three small pieces are hand-written, because the client has no option for them:
+  - **Fail closed.** After the loop, a tool call that was never run means the model named a tool that was
+    not offered, and the handler throws an `LdAiException` naming it. The client would otherwise answer
+    the model "not found", or return the call unhandled.
+  - **No duplicate spans.** The loop runs with no current `Activity`, under an inner client that exposes
+    no `ActivitySource`. Otherwise the client adds its own `execute_tool` span on the source of a current
+    `invoke_agent` span, which is the SDK's.
+  - **Invocable tools.** Each offered tool is an `AIFunction` whose calls are routed through the client's
+    `FunctionInvoker` to the handler's tool runner. The client treats a bare `AIFunctionDeclaration` as
+    not invocable and stops the loop.
+- **Agent mode (planned) will add a max-turns middleware below `FunctionInvokingChatClient`.** It is the one
+  hand-written loop piece agent mode needs. `MaximumIterationsPerRequest` does not throw at the limit (the
+  last turn is sent without tools), and it is a per-instance setting, not a per-request one.
+
 ## Language idioms
 
 The public contract is shared with the JavaScript, Python and Go SDKs. Everything

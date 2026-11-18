@@ -30,7 +30,11 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Internal
             Declarations = declarations;
         }
 
-        /// <summary>The declarations sent in <see cref="ChatOptions.Tools"/>, in the config's order.</summary>
+        /// <summary>
+        /// The functions sent in <see cref="ChatOptions.Tools"/>, in the config's order. Each is an
+        /// <see cref="AIFunction"/>, so a function-invoking client treats it as invocable; the tool loop
+        /// routes every call through <see cref="ExecuteAsync"/> rather than invoking them directly.
+        /// </summary>
         internal IReadOnlyList<AITool> Declarations { get; }
 
         /// <summary>Whether any tool is offered.</summary>
@@ -72,7 +76,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Internal
                 }
 
                 byName[entry.Key] = function;
-                declarations.Add(AIFunctionFactory.CreateDeclaration(entry.Key, entry.Value.Description ?? "", entry.Value.Parameters));
+                declarations.Add(new OfferedFunction(entry.Key, entry.Value.Description ?? "", entry.Value.Parameters));
             }
 
             return new OfferedTools(byName, declarations);
@@ -98,7 +102,7 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Internal
         {
             if (!_byName.TryGetValue(call.Name, out var tool))
             {
-                throw new LdAiException($"The model called the tool \"{call.Name}\", which was not offered for this request.");
+                throw NotOffered(call.Name);
             }
 
             using var span = Telemetry.StartExecuteTool(root, call.Name, call.CallId);
@@ -117,6 +121,14 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Internal
             }
         }
 
+        /// <summary>
+        /// The fail-closed error for a tool call the model made to a tool that was not offered.
+        /// </summary>
+        /// <param name="name">The tool name from the model.</param>
+        /// <returns>The exception to throw.</returns>
+        internal static LdAiException NotOffered(string name) =>
+            new LdAiException($"The model called the tool \"{name}\", which was not offered for this request.");
+
         private static JsonElement Arguments(IDictionary<string, object?>? arguments) =>
             JsonSerializer.SerializeToElement(arguments ?? new Dictionary<string, object?>());
 
@@ -129,5 +141,33 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Internal
                     key);
             }
         }
+    }
+
+    /// <summary>
+    /// An offered tool as a function the model can call: its name, description and the config's JSON
+    /// Schema, unchanged. Calls never reach <see cref="InvokeCoreAsync"/>: the tool loop runs every call
+    /// through <see cref="OfferedTools.ExecuteAsync"/>.
+    /// </summary>
+    internal sealed class OfferedFunction : AIFunction
+    {
+        internal OfferedFunction(string name, string description, JsonElement jsonSchema)
+        {
+            Name = name;
+            Description = description;
+            JsonSchema = jsonSchema;
+        }
+
+        /// <inheritdoc/>
+        public override string Name { get; }
+
+        /// <inheritdoc/>
+        public override string Description { get; }
+
+        /// <inheritdoc/>
+        public override JsonElement JsonSchema { get; }
+
+        /// <inheritdoc/>
+        protected override ValueTask<object?> InvokeCoreAsync(AIFunctionArguments arguments, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException($"The tool \"{Name}\" runs only through the handler's tool loop.");
     }
 }
