@@ -119,6 +119,8 @@ Each is deliberate. None conflicts with a company rule.
 - **Agent mode (planned) will add a max-turns middleware below `FunctionInvokingChatClient`.** It is the one
   hand-written loop piece agent mode needs. `MaximumIterationsPerRequest` does not throw at the limit (the
   last turn is sent without tools), and it is a per-instance setting, not a per-request one.
+- **What messages mode does at the turn limit is open.** The SDKs differ, so this one keeps the client's
+  default: at its iteration limit the last turn goes without tools, and no error is raised.
 
 ## Language idioms
 
