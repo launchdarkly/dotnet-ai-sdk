@@ -76,7 +76,7 @@ A `ToolHandler` is either a `FunctionTool`, which the SDK calls with the model's
 
 - **Lazy auto-init:** the first `InvokeAsync` or `InspectConfigAsync` initializes the process-wide client from `LD_SDK_KEY`. Concurrent first calls share one attempt; a failed attempt is not cached.
 - **Explicit init:** `InitClientAsync(InitOptions)` sets the SDK key, base URIs and start wait time. With an SDK key, the first successful initialization wins.
-- **Bring your own client (BYOC):** `InitClientAsync(ILdClient)` installs a LaunchDarkly client the application built, replacing the current one; its readiness is not checked.
+- **Bring your own client (BYOC):** `InitClientAsync(ILdClient)` installs a LaunchDarkly client the application built; its readiness is not checked. When a client is already installed, that one is returned and the passed client is neither installed nor closed. Call `ShutdownAsync` first to switch clients. A passed client does replace an initialization attempt that is still in flight.
 - **Shutdown:** `ShutdownAsync` clears the singleton, restores the `Configure` defaults and re-arms once-per-client events and warnings, then flushes and disposes the LaunchDarkly client, including a BYOC one.
 
 The invariants and the invoke flow are in the core package's [agents.md](src/LaunchDarkly.AI.Server/agents.md#implementation-details).
@@ -220,7 +220,7 @@ The core never references a provider package. Experimental names live only in an
 ### Naming
 PascalCase for types and members, two-letter acronyms upper-case (`AI`), longer
 ones Pascal-cased (`Json`). Interfaces start with `I`. Async methods end in
-`Async`. Private fields are `_camelCase`. Spec string values stay strings, in a
+`Async`. Private fields are `_camelCase`. String values in the contract stay strings, in a
 static class of constants, not enums.
 
 ### Concurrency

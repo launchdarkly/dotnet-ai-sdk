@@ -164,7 +164,7 @@ All public types are in the `LaunchDarkly.AI.Server` namespace. The XML document
 | Member | Description |
 |---|---|
 | `Task<ILdAiClient> InitClientAsync()`<br>`InitClientAsync(InitOptions options[, CancellationToken])` | Initializes the process-wide client from an SDK key (`InitOptions.SdkKey`, else `LD_SDK_KEY`), or returns the existing one. Concurrent first calls share one attempt; a failed attempt is not cached. Throws `LdAiException` with no key or when the LaunchDarkly client does not initialize. |
-| `Task<ILdAiClient> InitClientAsync(ILdClient client[, CancellationToken])` | Uses a LaunchDarkly client the application built, replacing the current one. |
+| `Task<ILdAiClient> InitClientAsync(ILdClient client[, CancellationToken])` | Uses a LaunchDarkly client the application built. When a client is already initialized, returns that one and leaves the passed client unused; call `ShutdownAsync` first to switch clients. |
 | `ILdAiClient GetClient()` | The process-wide client. Throws `InvalidOperationException` before initialization. |
 | `Task ShutdownAsync(CancellationToken = default)` | Flushes and closes the LaunchDarkly client and clears the process-wide client. Safe to call more than once. |
 | `void Configure(SdkOptions options)` | Process-wide defaults (`CaptureContent`, default `true`). Throws `ConfigureLockedException` for different options after the first invocation. |

@@ -148,7 +148,7 @@ var ldClient = new LdClient(Configuration.Builder(sdkKey).StartWaitTime(TimeSpan
 var aiClient = await LdAi.InitClientAsync(ldClient);
 ```
 
-With an SDK key, the first initialization wins: a later `InitClientAsync(options)` returns the existing client and ignores its options. Passing your own client replaces the current one. `LdAi.ShutdownAsync` clears it, so the next call initializes again.
+With an SDK key, the first initialization wins: a later `InitClientAsync(options)` returns the existing client and ignores its options. Passing your own client also returns the existing client when there is one, and leaves the client you passed unused. `LdAi.ShutdownAsync` clears it, so the next call initializes again: call it first to switch clients.
 
 ## Telemetry
 

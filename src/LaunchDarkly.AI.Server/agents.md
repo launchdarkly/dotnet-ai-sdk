@@ -70,7 +70,7 @@ LdAiException        AiConfigNotFoundException  AiConfigDisabledException
 
 - There is one process-wide client. Every change to it happens under one lock; the LaunchDarkly client is built and closed outside the lock.
 - Concurrent first calls share one initialization attempt. A failed attempt is not cached, so the next call tries again. A caller's cancellation token cancels only its own wait.
-- With an SDK key, the first successful initialization wins and later options are ignored. `InitClientAsync(ILdClient)` replaces the current client and any attempt in flight, and does not check that the client has initialized.
+- With an SDK key, the first successful initialization wins and later options are ignored. `InitClientAsync(ILdClient)` replaces an attempt in flight, but not an installed client: with one installed, it returns that client and neither installs nor closes the passed one (call `ShutdownAsync` first to switch). It does not check that the client has initialized.
 - `ShutdownAsync` detaches the client at once, restores the `Configure` defaults, re-arms the once-per-client warnings and events, then flushes and disposes the LaunchDarkly client off the caller's thread. A second call does nothing.
 - `Configure` is locked by the first invocation: the same options are accepted again, different ones throw `ConfigureLockedException`.
 
