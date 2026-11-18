@@ -8,21 +8,82 @@ follow .NET idiom (see [Language idioms](#language-idioms)).
 ## Status
 
 Pre-1.0 working version. Nothing is published to NuGet before 1.0; each feature
-bumps the working version (0.1.0, 0.2.0, ...) in its own pull request. The
-repository is currently a **skeleton**: build, test, lint and docs plumbing, with
-no public API and no behaviour.
+bumps the working version (0.1.0, 0.2.0, ...) in its own pull request. The 0.1.0
+working version runs messages-mode AI Configs through an `IChatClient`, blocking
+(no streaming), with tools, history, structured output, tracking and spans. Agent
+mode, streaming, graphs, judges and the OpenTelemetry setup package are not in
+.NET yet. The README's "What works so far" is the user-facing list.
 
 ## Packages
 
-| Package | Folder | Role |
-|---|---|---|
-| `LaunchDarkly.AI.Server` | `src/LaunchDarkly.AI.Server` | Core: AI Config evaluation, invocation, tracking, activities. No provider dependency. |
-| `LaunchDarkly.AI.Server.ExtensionsAI` | `src/LaunchDarkly.AI.Server.ExtensionsAI` | Provider handler for any `Microsoft.Extensions.AI` `IChatClient`. |
-| `LaunchDarkly.AI` | `src/LaunchDarkly.AI` | Metapackage: no assembly, depends on `LaunchDarkly.AI.Server` only. |
+| Package | Folder | Tier | Role |
+|---|---|---|---|
+| `LaunchDarkly.AI.Server` | `src/LaunchDarkly.AI.Server` | 0, core client | AI Config evaluation, handler selection, invocation, tracking, activities. No provider dependency. |
+| `LaunchDarkly.AI.Server.ExtensionsAI` | `src/LaunchDarkly.AI.Server.ExtensionsAI` | 1, handler | Provider handler for any `Microsoft.Extensions.AI` `IChatClient`: `["*", "messages"]`. |
+| `LaunchDarkly.AI` | `src/LaunchDarkly.AI` | 2, convenience | Metapackage: no assembly, depends on `LaunchDarkly.AI.Server` only. |
 
 Dependency direction: `ExtensionsAI` and `LaunchDarkly.AI` reference the core; the
-core references neither. Each package folder has its own `README.md` (shipped in
-the package) and, for the two libraries, an `agents.md`.
+core references neither, and `LaunchDarkly.AI` does not reference `ExtensionsAI`.
+Each package folder has its own `README.md` (shipped in the package) and
+`agents.md`.
+
+## The `ProviderHandler` contract
+
+A handler is a `ProviderHandler`, built with `LdAi.CreateHandler`:
+
+```text
+ProviderHandler LdAi.CreateHandler(
+    ProvidesFor providesFor,                                          // (provider, mode) metadata
+    Func<HandlerRequest, CancellationToken, Task<HandlerResult>> handler,
+    CreateHandlerOptions options)                                     // optional: CaptureContent, Providers
+
+HandlerRequest  { AiConfig Config; string? UserInput;
+                  IReadOnlyDictionary<string, ToolHandler> ToolHandlers;
+                  IReadOnlyDictionary<string, object?> Variables;
+                  IReadOnlyList<HistoryMessage>? History }
+HandlerResult   { object? Output; IReadOnlyDictionary<string, object?>? Usage }
+```
+
+- **`ProvidesFor` is required.** It is the `(provider, mode)` pair the handler serves: a provider name compared exactly, or `ProvidesFor.Wildcard` (`"*"`), and `HandlerModes.Messages` or `HandlerModes.Agent`. A wildcard may list the providers it serves (`CreateHandlerOptions.Providers`).
+- **Selection** (`Config.cs`, `HandlerSelection`): the variation's mode is normalized (`agent`, else `messages`); the exact provider wins, then the wildcard with the shortest list holding the provider (the earlier one on a tie), then the first unscoped wildcard; otherwise `NoHandlerException`.
+- **The four parameters:** `Config` is the evaluated variation; `UserInput` the caller's input; `ToolHandlers` only the tools the variation attaches, already wrapped to track each call; `Variables` the caller's variables plus `ldContext` and the SDK's tracking entries, which the span helpers read. `History` is the prior turns.
+- **The result:** `Output` is the model's text (or a parsed object); `Usage` is the provider's raw token counts in a spelling `UsageParser` knows (`input_tokens` or `inputTokens`, `output_tokens` or `outputTokens`, and the cache-token keys). The core tracks duration, success or error and usage around the call: a handler never tracks them itself. A handler's exception is tracked as an error and rethrown.
+- **Spans:** a handler writes its `invoke_agent` / `chat` / `execute_tool` spans with the shared helpers in `Internal/Telemetry.cs`, so every handler writes the same names and attributes.
+
+<!-- snippet: custom-handler -->
+```csharp
+// A handler is a function from the evaluated request to the model's output and raw usage.
+var handler = LdAi.CreateHandler(
+    new ProvidesFor("Echo", HandlerModes.Messages),
+    (request, cancellationToken) => Task.FromResult(new HandlerResult
+    {
+        Output = $"{request.Config.Model.Name} heard: {request.UserInput}",
+        Usage = new Dictionary<string, object?> { ["input_tokens"] = 3, ["output_tokens"] = 4 },
+    }));
+```
+
+## The `NativeTool` pattern
+
+A `ToolHandler` is either a `FunctionTool`, which the SDK calls with the model's arguments, or a `NativeTool(toolName)`, a sentinel for a provider-executed (built-in) tool that the SDK never calls. .NET needs no `NATIVE_TOOL_KEY` marker: a handler detects the sentinel by type.
+
+- The core wraps each `NativeTool` the variation attaches in a tracking stub, a `FunctionTool` whose internal `WrappedNativeTool` is the sentinel, so a provider package can recover the provider's tool name and still report the call.
+- A handler that supports built-in tools maps `ToolName` to its provider's tool; one that does not must skip the sentinel and never offer it as a function.
+- Provider mappings: the `IChatClient` handler maps none and skips every `NativeTool` with one warning per tool key. The Claude agents handlers in the other SDKs map `"web-search"` to the built-in `WebSearch` tool (`NativeTool("WebSearch")`); in .NET they are not built yet.
+
+## Lifecycle
+
+`InitClientAsync` → `Config(...).InvokeAsync(...)` → `ShutdownAsync`:
+
+- **Lazy auto-init:** the first `InvokeAsync` or `InspectConfigAsync` initializes the process-wide client from `LD_SDK_KEY`. Concurrent first calls share one attempt; a failed attempt is not cached.
+- **Explicit init:** `InitClientAsync(InitOptions)` sets the SDK key, base URIs and start wait time. With an SDK key, the first successful initialization wins.
+- **Bring your own client (BYOC):** `InitClientAsync(ILdClient)` installs a LaunchDarkly client the application built, replacing the current one; its readiness is not checked.
+- **Shutdown:** `ShutdownAsync` clears the singleton, restores the `Configure` defaults and re-arms once-per-client events and warnings, then flushes and disposes the LaunchDarkly client, including a BYOC one.
+
+The invariants and the invoke flow are in the core package's [agents.md](src/LaunchDarkly.AI.Server/agents.md#implementation-details).
+
+## Agent graphs
+
+Not in .NET yet: there is no `Graph()`, `GraphDefinition` or `ResolveGraph`, and `ConfigArgs.Registry` is the only place a registry is passed. They arrive with a later working version.
 
 ## Repository layout
 
@@ -37,7 +98,7 @@ src/Directory.Build.targets  PublicApiAnalyzers for every library that ships an 
 src/<Package>/               one folder per package (PublicAPI.Shipped.txt / PublicAPI.Unshipped.txt)
 test/Directory.Build.props   xUnit settings and test target frameworks
 test/<Package>.Tests/        one xUnit project per package
-examples/                    runnable examples (none yet)
+examples/                    console project: scenarios, registry, tools, README code samples (Snippets/)
 scripts/                     pack-check.sh (packaging check), api-update.sh (PublicAPI file update),
                              api-compat.sh (breaking-change check), required-members.cs (used by
                              api-compat.sh), api-check-selftest.sh
@@ -59,6 +120,7 @@ docs-src/, docfx.json, index.md, toc.yml    API reference (docfx)
 | `make api-compat BASE=<ref>` | Breaking-change check of the public API against a git ref (default `main`), with ApiCompat |
 | `make pack` | NuGet packages into `nupkgs/` |
 | `make pack-check` | Install each package from a local feed into a fresh project, build and run it |
+| `make examples` | Run the example scenarios offline, success and failure cases |
 
 `TESTFRAMEWORK=net8.0 make test` runs one target framework. `BUILDFRAMEWORKS`
 does the same for the libraries. The pre-commit hook (`lefthook.yml`) runs
@@ -180,8 +242,11 @@ isolation, so test order doesn't matter.
 
 ### Docs
 An XML doc comment on every public member, starting with what it does. Each
-package ships its own `README.md`; each library has an `agents.md`. Reuse the
-other SDKs' wording for the same concept.
+package ships its own `README.md` and has an `agents.md`. Reuse the
+other SDKs' wording for the same concept. Every C# block in a README or
+`agents.md` is a compiled sample: it sits under a `<!-- snippet: name -->`
+marker and matches the `// snippet: name` ... `// end-snippet` span in
+`examples/Snippets/`, which `DocSnippetTests` checks.
 
 ### Dependencies
 The BCL first. Core: `LaunchDarkly.ServerSdk` (8.x), plus `System.Text.Json` and
