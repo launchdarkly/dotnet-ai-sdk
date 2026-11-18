@@ -100,6 +100,126 @@ done < <(list_packages "$WORK/base-nupkgs")
 mapfile -t PACKAGE_IDS < <(printf '%s\n' "${!HEAD_PKG[@]}" "${!BASE_PKG[@]}" | sort -u)
 echo "api-compat: packages: ${PACKAGE_IDS[*]}"
 
+# Breaks that ApiCompat does not flag, because the metadata signature stays the same.
+# Each function prints one "error CPXnnn" line per break and returns 1 if there is one,
+# or 2 if it could not run.
+#
+# A parameter default removed (an optional parameter becomes required) or changed: from
+# the PublicAPI reports, which record each default (`int factor = 2`).
+report_breaks() { # <base project folder> <head project folder>
+  local out
+  out="$(python3 -I - "$1" "$2" <<'PY'
+import os, sys
+
+def report(folder):
+    lines = set()
+    for name in ("PublicAPI.Shipped.txt", "PublicAPI.Unshipped.txt"):
+        path = os.path.join(folder, name)
+        if os.path.exists(path):
+            for line in open(path, encoding="utf-8").read().splitlines():
+                if line.startswith("*REMOVED*"):
+                    lines.discard(line[len("*REMOVED*"):])
+                elif line.strip() and not line.startswith("#"):
+                    lines.add(line)
+    return lines
+
+def value_end(line, j):
+    """Where a default value that starts at j ends: the next , or ) outside brackets and quotes."""
+    quote, depth = None, 0
+    while j < len(line):
+        c = line[j]
+        if quote:
+            if c == "\\":
+                j += 1
+            elif c == quote:
+                quote = None
+        elif c in "\"'":
+            quote = c
+        elif c in "(<[":
+            depth += 1
+        elif c in ")>]" and depth:
+            depth -= 1
+        elif c in ",)":
+            break
+        j += 1
+    return j
+
+def split(line):
+    """(the line without its parameter defaults, [each parameter's default, or None])."""
+    start = line.find("(")
+    if start < 0:
+        return line, []
+    out, defaults, depth, quote, i = [line[: start + 1]], [None], 1, None, start + 1
+    while i < len(line):
+        c = line[i]
+        if quote:
+            if c == "\\":
+                out.append(line[i : i + 2])
+                i += 2
+                continue
+            quote = None if c == quote else quote
+        elif depth == 1 and line.startswith(" = ", i):
+            j = value_end(line, i + 3)
+            defaults[-1] = line[i + 3 : j]
+            i = j
+            continue
+        elif c in "\"'":
+            quote = c
+        elif c in "(<[":
+            depth += 1
+        elif c in ")>]":
+            depth -= 1
+            if depth == 0:
+                out.append(line[i:])
+                break
+        elif c == "," and depth == 1:
+            defaults.append(None)
+        out.append(c)
+        i += 1
+    return "".join(out), defaults
+
+base, head = report(sys.argv[1]), report(sys.argv[2])
+added = {}
+for line in head - base:
+    added.setdefault(split(line)[0], []).append(line)
+for old in sorted(base - head):
+    key, old_defaults = split(old)
+    for new in added.get(key, []):
+        for old_default, new_default in zip(old_defaults, split(new)[1]):
+            if old_default is not None and old_default != new_default:
+                kind = "an optional parameter becomes required" if new_default is None else "a parameter default changes"
+                print(f"error CPX001: {kind}: '{old}' is now '{new}'")
+PY
+)" || return 2
+  [ -z "$out" ] && return 0
+  printf '%s\n' "$out"
+  return 1
+}
+
+# A member that becomes required, on a type that callers construct: from the assemblies'
+# RequiredMemberAttribute (scripts/required-members.cs), since the report does not record
+# `required`. Compares the base and head builds of each target framework they share.
+required_breaks() { # <base project folder> <head project folder> <assembly name>
+  local base_bin="$1/bin/Release" head_bin="$2/bin/Release" tfm status=0 member type
+  for tfm in "$head_bin"/*/; do
+    tfm="$(basename "$tfm")"
+    [ -f "$base_bin/$tfm/$3.dll" ] && [ -f "$head_bin/$tfm/$3.dll" ] || continue
+    "$DOTNET" run "$ROOT/scripts/required-members.cs" -- "$base_bin/$tfm/$3.dll" >"$WORK/required-base.txt" || return 2
+    "$DOTNET" run "$ROOT/scripts/required-members.cs" -- "$head_bin/$tfm/$3.dll" >"$WORK/required-head.txt" || return 2
+    while read -r member; do
+      type="${member%.*}"
+      if grep -qxF "required $member" "$WORK/required-base.txt" ||
+        ! grep -qxF "type $type" "$WORK/required-base.txt" ||
+        ! grep -qxF "constructible $type" "$WORK/required-head.txt"; then
+        continue
+      fi
+      echo "error CPX002: $tfm: $member becomes required, and callers construct $type"
+      status=1
+    done < <(sed -n 's/^required //p' "$WORK/required-head.txt")
+  done
+  return "$status"
+}
+
 failed=()
 tool_errors=()
 for id in "${PACKAGE_IDS[@]}"; do
@@ -140,8 +260,20 @@ for id in "${PACKAGE_IDS[@]}"; do
       failed+=("$id")
     else
       tool_errors+=("$id")
+      continue
     fi
   fi
+  # CPX: this script's own findings, for breaks that ApiCompat does not see.
+  for check in report_breaks required_breaks; do
+    status=0
+    "$check" "$WORK/base/src/$id" "$ROOT/src/$id" "$id" || status=$?
+    if [ "$status" -eq 2 ]; then
+      echo "api-compat: $id: $check could not run."
+      tool_errors+=("$id")
+    elif [ "$status" -eq 1 ] && [[ " ${failed[*]} " != *" $id "* ]]; then
+      failed+=("$id")
+    fi
+  done
 done
 
 if [ "${#tool_errors[@]}" -ne 0 ]; then

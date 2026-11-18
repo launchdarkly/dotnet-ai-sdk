@@ -75,7 +75,7 @@ reset_fixture() {
 
 mkdir -p "$LIB" "$FIX/scripts" "$FIX/.config"
 cp "$ROOT/Makefile" "$ROOT/global.json" "$FIX/"
-cp "$ROOT/scripts/api-compat.sh" "$ROOT/scripts/api-update.sh" "$FIX/scripts/"
+cp "$ROOT/scripts/api-compat.sh" "$ROOT/scripts/api-update.sh" "$ROOT/scripts/required-members.cs" "$FIX/scripts/"
 cp "$ROOT/.config/dotnet-tools.json" "$FIX/.config/"
 analyzers_version="$(python3 -I - "$ROOT/Directory.Packages.props" <<'PY'
 import sys, xml.etree.ElementTree as ET

@@ -39,7 +39,8 @@ test/Directory.Build.props   xUnit settings and test target frameworks
 test/<Package>.Tests/        one xUnit project per package
 examples/                    runnable examples (none yet)
 scripts/                     pack-check.sh (packaging check), api-update.sh (PublicAPI file update),
-                             api-compat.sh (breaking-change check), api-check-selftest.sh
+                             api-compat.sh (breaking-change check), required-members.cs (used by
+                             api-compat.sh), api-check-selftest.sh
 docs-src/, docfx.json, index.md, toc.yml    API reference (docfx)
 .github/workflows/           CI, PR-title lint, docs, release (not run until the first push)
 ```

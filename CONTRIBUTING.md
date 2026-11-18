@@ -44,7 +44,7 @@ Release builds are strong-named. Without the private key (`LaunchDarkly.snk`, wh
 
 ### API compatibility
 
-`make api-compat BASE=<git ref>` (default `main`) builds the base ref in a temporary worktree and fails if the working tree breaks the public API compared with it (a removed or changed type or member, a renamed parameter, a dropped target framework). On a pull request, CI runs the same check against the base branch. If a break is intended, mark the pull request title with `!` (`feat!: ...`, `fix(scope)!: ...`): the check then passes with a warning, and editing the title re-runs it. If a maintainer judges a flagged change compatible, they add the `api-compatible` label, which passes it the same way. Locally, `PR_TITLE='feat!: ...' make api-compat` or `API_COMPATIBLE=true make api-compat` does the same.
+`make api-compat BASE=<git ref>` (default `main`) builds the base ref in a temporary worktree and fails if the working tree breaks the public API compared with it (a removed or changed type or member, a renamed parameter, a dropped target framework, a parameter default that is removed or changed, a member that becomes `required` on a type callers construct). On a pull request, CI runs the same check against the base branch. If a break is intended, mark the pull request title with `!` (`feat!: ...`, `fix(scope)!: ...`): the check then passes with a warning, and editing the title re-runs it. If a maintainer judges a flagged change compatible, they add the `api-compatible` label, which passes it the same way. Locally, `PR_TITLE='feat!: ...' make api-compat` or `API_COMPATIBLE=true make api-compat` does the same.
 
 ### Packaging
 
