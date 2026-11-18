@@ -7,7 +7,7 @@ DOTNET ?= dotnet
 # The public API files that api-check keeps in sync with the code (a git pathspec).
 PUBLIC_API_PATHSPEC := 'src/*/PublicAPI.*.txt'
 
-.PHONY: build test lint format format-check api-update api-checkapi-check-selftest api-compat docs pack pack-check clean restore tools
+.PHONY: build test lint format format-check api-update api-check api-check-selftest api-compat docs pack pack-check clean restore tools
 
 restore:
 	$(DOTNET) restore $(SOLUTION)
