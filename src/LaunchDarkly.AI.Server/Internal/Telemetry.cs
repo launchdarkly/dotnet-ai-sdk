@@ -321,7 +321,7 @@ namespace LaunchDarkly.AI.Server.Internal
 
         /// <summary>
         /// The text a tool handler's return value is sent to the model as: a string unchanged,
-        /// <see langword="null"/> as an empty string, and anything else as compact JSON with non-ASCII
+        /// <see langword="null"/> or a JSON null as an empty string, and anything else as compact JSON with non-ASCII
         /// characters not escaped. A value JSON cannot encode falls back to its <c>ToString()</c>.
         /// </summary>
         /// <param name="value">The tool's result.</param>
@@ -329,6 +329,7 @@ namespace LaunchDarkly.AI.Server.Internal
         internal static string ToolResultString(object? value) => value switch
         {
             null => "",
+            JsonElement element when element.ValueKind == JsonValueKind.Null || element.ValueKind == JsonValueKind.Undefined => "",
             string text => text,
             _ => CompactJson(value) ?? value.ToString() ?? "",
         };

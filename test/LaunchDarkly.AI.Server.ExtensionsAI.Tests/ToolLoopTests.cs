@@ -138,6 +138,14 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         }
 
         [Fact]
+        public async Task JsonNullResultIsSentAsEmptyText()
+        {
+            Chat.ThenToolCall("lookup").ThenText("done");
+            await RunAsync(Config() with { Tools = ConfigTools("lookup") }, tools: new Dictionary<string, ToolHandler> { ["lookup"] = Tool(result: Fixtures.Json("null")) });
+            Assert.Equal("", Assert.Single(Chat.Requests[1].ToolResults).Result);
+        }
+
+        [Fact]
         public async Task StringResultIsSentUnchanged()
         {
             Chat.ThenToolCall("lookup").ThenText("done");
