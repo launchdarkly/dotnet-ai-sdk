@@ -103,7 +103,11 @@ namespace LaunchDarkly.AI.Server.Internal
 
         /// <summary>
         /// Installs a client the application built, replacing any attempt in flight. The caller
-        /// owns that client's readiness, so it is not checked.
+        /// owns that client's readiness, so it is not checked. When a client is already installed,
+        /// that one is returned and <paramref name="client"/> is neither installed nor closed:
+        /// replacing the installed client would leave it, and its streaming connection, open with
+        /// nothing to close it, and the caller owns <paramref name="client"/>. Call
+        /// <c>ShutdownAsync</c> first to switch clients.
         /// </summary>
         /// <param name="client">The LaunchDarkly client.</param>
         /// <returns>The AI client.</returns>
@@ -112,12 +116,20 @@ namespace LaunchDarkly.AI.Server.Internal
             LdAiClient installed;
             lock (_lock)
             {
-                _attempt = null;
-                installed = ReferenceEquals(_current?.LdClient, client) ? _current! : new LdAiClient(client);
-                _current = installed;
+                if (_current is { } existing)
+                {
+                    installed = existing;
+                }
+                else
+                {
+                    _attempt = null;
+                    installed = new LdAiClient(client);
+                    _current = installed;
+                }
             }
 
-            ReportTo(client);
+            // Packages registered since the last init report now, to whichever client is installed.
+            ReportTo(installed.LdClient);
             return installed;
         }
 

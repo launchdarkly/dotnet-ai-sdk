@@ -53,7 +53,9 @@ namespace LaunchDarkly.AI.Server
 
         /// <summary>
         /// Initializes the process-wide client with a LaunchDarkly client the application built.
-        /// The caller owns that client's readiness.
+        /// The caller owns that client's readiness. When a client is already initialized, that one
+        /// is returned and <paramref name="client"/> is neither used nor closed; call
+        /// <see cref="ShutdownAsync(CancellationToken)"/> first to switch clients.
         /// </summary>
         /// <param name="client">The LaunchDarkly server-side client.</param>
         /// <returns>The AI client.</returns>
@@ -62,7 +64,9 @@ namespace LaunchDarkly.AI.Server
 
         /// <summary>
         /// Initializes the process-wide client with a LaunchDarkly client the application built.
-        /// The caller owns that client's readiness.
+        /// The caller owns that client's readiness. When a client is already initialized, that one
+        /// is returned and <paramref name="client"/> is neither used nor closed; call
+        /// <see cref="ShutdownAsync(CancellationToken)"/> first to switch clients.
         /// </summary>
         /// <param name="client">The LaunchDarkly server-side client.</param>
         /// <param name="cancellationToken">Cancels the wait.</param>
