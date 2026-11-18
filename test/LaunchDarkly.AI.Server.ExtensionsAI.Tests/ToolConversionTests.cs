@@ -34,6 +34,33 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         }
 
         [Fact]
+        public async Task ThreeToolsCarryTheirOwnDescriptionAndSchema()
+        {
+            var configTools = new[] { "a", "b", "c" }.ToDictionary(
+                n => n,
+                n => new ToolDefinition(n, TestHelpers.Fixtures.Json("{\"type\":\"object\",\"properties\":{\"field_" + n + "\":{\"type\":\"string\"}}}"))
+                {
+                    Description = "description of " + n,
+                });
+
+            await OfferAsync(configTools, new Dictionary<string, ToolHandler> { ["a"] = Tool(), ["b"] = Tool(), ["c"] = Tool() });
+
+            var offered = Chat.LastRequest.Tools.Select(t => Assert.IsAssignableFrom<AIFunctionDeclaration>(t)).ToList();
+            Assert.Equal(3, offered.Count);
+            Assert.All(offered, tool =>
+            {
+                var config = configTools[tool.Name];
+                Assert.Equal(config.Description, tool.Description);
+                var properties = tool.JsonSchema.GetProperty("properties");
+                Assert.Equal(
+                    config.Parameters.GetProperty("properties").EnumerateObject().Select(p => p.Name),
+                    properties.EnumerateObject().Select(p => p.Name));
+                Assert.Equal("string", properties.GetProperty("field_" + tool.Name).GetProperty("type").GetString());
+            });
+            Assert.Equal(new[] { "a", "b", "c" }, offered.Select(t => t.Name).OrderBy(n => n, System.StringComparer.Ordinal));
+        }
+
+        [Fact]
         public async Task OnlyToolsWithAHandlerAreOffered()
         {
             await OfferAsync(ConfigTools("a", "b", "c"), new Dictionary<string, ToolHandler> { ["a"] = Tool(), ["b"] = Tool() });

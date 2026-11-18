@@ -195,6 +195,33 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         }
 
         [Fact]
+        public async Task JsonNullToolResultWritesNoResultAttribute()
+        {
+            Chat.ThenToolCall("lookup").ThenText("done");
+            var jsonNull = System.Text.Json.JsonDocument.Parse("null").RootElement.Clone();
+            await RunAsync(Config() with { Tools = ConfigTools("lookup") }, tools: new Dictionary<string, ToolHandler> { ["lookup"] = Tool(result: jsonNull) });
+            Assert.Null(_spans.Single("execute_tool lookup").Attr("gen_ai.tool.call.result"));
+        }
+
+        [Fact]
+        public async Task RootStartsANewTraceWithoutACurrentSpan()
+        {
+            Activity.Current = null;
+            await RunAsync(Config());
+            Assert.Equal(default, _spans.Root.ParentSpanId);
+        }
+
+        [Fact]
+        public async Task EmptyProviderIsWrittenAsOpenai()
+        {
+            await RunAsync(Fixtures.Config(provider: "") with { Instructions = "x" });
+
+            var chat = _spans.Named("chat ").Single();
+            Assert.Equal("openai", chat.AttrString("gen_ai.provider.name"));
+            Assert.Equal("microsoft.extensions.ai", chat.AttrString("gen_ai.system"));
+        }
+
+        [Fact]
         public async Task StringToolResultIsWrittenUnchanged()
         {
             Chat.ThenToolCall("lookup").ThenText("done");

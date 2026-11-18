@@ -30,6 +30,13 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         }
 
         [Fact]
+        public async Task UnresolvedPlaceholderWithEmptyVariablesIsSentUnchanged()
+        {
+            await RunAsync(Config("Hello {{missing}}"), "hi", Vars());
+            Assert.Equal("Hello {{missing}}", Chat.LastRequest.SystemText);
+        }
+
+        [Fact]
         public async Task SystemMessagesAreCombinedIntoTheSystemPrompt()
         {
             await RunAsync(Config(null, Msg("system", "Rule one."), Msg("system", "Rule two."), Msg("assistant", "Hi there")), "Hello");

@@ -103,6 +103,68 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         }
 
         [Fact]
+        public async Task ExplicitFalseOnTheWrapperBeatsAConfiguredTrue()
+        {
+            await SetUpAsync();
+            LdAi.Configure(new SdkOptions { CaptureContent = true });
+            using var spans = new SpanRecorder();
+            Chat.ThenText("secret");
+            await ChatClientMessages.InvokeAsync(Fixtures.ConfigKey, "hi", Fixtures.UserContext,
+                new ChatClientMessagesOptions { ChatClient = Chat, CaptureContent = false });
+
+            Assert.Null(spans.Named("chat ").Single().Attr("gen_ai.completion.0.content"));
+        }
+
+        [Fact]
+        public async Task OmittedWrapperCaptureFollowsTheConfiguredDefault()
+        {
+            await SetUpAsync();
+            LdAi.Configure(new SdkOptions { CaptureContent = false });
+            using var spans = new SpanRecorder();
+            Chat.ThenText("secret");
+            await ChatClientMessages.InvokeAsync(Fixtures.ConfigKey, "hi", Fixtures.UserContext,
+                new ChatClientMessagesOptions { ChatClient = Chat });
+
+            Assert.Null(spans.Named("chat ").Single().Attr("gen_ai.completion.0.content"));
+        }
+
+        [Fact]
+        public async Task WrapperServesAnyProviderInMessagesModeOnly()
+        {
+            var fake = UseFakeClient();
+            fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig("Anthropic", "completion");
+            fake.Variations["agent-config"] = Fixtures.EnabledConfig("Anthropic", "agent");
+            Chat.ThenText("answer");
+
+            var response = await ChatClientMessages.InvokeAsync(Fixtures.ConfigKey, "hi", Fixtures.UserContext,
+                new ChatClientMessagesOptions { ChatClient = Chat });
+            Assert.Equal("answer", response.Response);
+
+            await Assert.ThrowsAsync<NoHandlerException>(() =>
+                ChatClientMessages.InvokeAsync("agent-config", "hi", Fixtures.UserContext, new ChatClientMessagesOptions { ChatClient = Chat }));
+            Assert.Single(Chat.Requests);
+        }
+
+        public static TheoryData<string[]> BadProviderLists() => new TheoryData<string[]>
+        {
+            new string[0],
+            new[] { "" },
+            new[] { " Bedrock" },
+        };
+
+        [Theory]
+        [MemberData(nameof(BadProviderLists))]
+        public async Task BadProvidersThroughTheWrapperNameProviders(string[] providers)
+        {
+            await SetUpAsync();
+            var ex = await Assert.ThrowsAnyAsync<System.ArgumentException>(() =>
+                ChatClientMessages.InvokeAsync(Fixtures.ConfigKey, "hi", Fixtures.UserContext,
+                    new ChatClientMessagesOptions { ChatClient = Chat, Providers = providers }));
+            Assert.Equal("providers", ex.ParamName);
+            Assert.Empty(Chat.Requests);
+        }
+
+        [Fact]
         public async Task WithoutOptionsTheCallIsRefused()
         {
             await SetUpAsync();

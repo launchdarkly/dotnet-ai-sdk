@@ -35,6 +35,20 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         }
 
         [Fact]
+        public async Task UnencodableResultFallsBackToItsStringForm()
+        {
+            var cyclic = new List<object>();
+            cyclic.Add(cyclic);
+            Chat.ThenToolCall("a").ThenText("the answer");
+
+            var result = await RunAsync(Config() with { Tools = ConfigTools("a") }, tools: new Dictionary<string, ToolHandler> { ["a"] = Tool(result: cyclic) });
+
+            Assert.Equal(2, Chat.Requests.Count);
+            Assert.Equal(cyclic.ToString(), Assert.Single(Chat.Requests[1].ToolResults).Result?.ToString());
+            Assert.Equal("the answer", result.Output);
+        }
+
+        [Fact]
         public async Task OutputIsTheLastTurnsTextOnly()
         {
             Chat.Then(_ => new Microsoft.Extensions.AI.ChatResponse(new Microsoft.Extensions.AI.ChatMessage(
