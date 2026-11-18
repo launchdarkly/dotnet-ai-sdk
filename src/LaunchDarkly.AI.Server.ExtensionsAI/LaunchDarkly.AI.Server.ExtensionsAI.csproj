@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.AI" />
   </ItemGroup>
 
   <!-- The tests read the package identity constants. Release builds are strong-named, so the

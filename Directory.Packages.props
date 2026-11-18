@@ -12,6 +12,8 @@
     <!-- Version 9 is a major version with breaking changes; stay on 8.x until it is adopted deliberately. -->
     <PackageVersion Include="LaunchDarkly.ServerSdk" Version="[8.17.2, 9.0.0)" />
     <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.11.0" />
+    <!-- The tool loop (FunctionInvokingChatClient). Kept at the same version as the abstractions. -->
+    <PackageVersion Include="Microsoft.Extensions.AI" Version="10.11.0" />
     <!-- In-box on net8.0 and later; needed as packages on netstandard2.0 only. -->
     <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="8.0.1" />
     <PackageVersion Include="System.Text.Json" Version="8.0.6" />
