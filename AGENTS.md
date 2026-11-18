@@ -38,7 +38,8 @@ src/<Package>/               one folder per package (PublicAPI.Shipped.txt / Pub
 test/Directory.Build.props   xUnit settings and test target frameworks
 test/<Package>.Tests/        one xUnit project per package
 examples/                    runnable examples (none yet)
-scripts/                     pack-check.sh (packaging check), api-compat.sh (breaking-change check)
+scripts/                     pack-check.sh (packaging check), api-update.sh (PublicAPI file update),
+                             api-compat.sh (breaking-change check), api-check-selftest.sh
 docs-src/, docfx.json, index.md, toc.yml    API reference (docfx)
 .github/workflows/           CI, PR-title lint, docs, release (not run until the first push)
 ```
@@ -51,7 +52,8 @@ docs-src/, docfx.json, index.md, toc.yml    API reference (docfx)
 | `make test` | xUnit tests on the Debug build: net8.0 and net10.0; net462 too on Windows |
 | `make lint` | Analyzer diagnostics without changing files |
 | `make format` / `make format-check` | Apply / verify whitespace and code style (`.editorconfig`) |
-| `make api-check` | Regenerate `PublicAPI.*.txt` and fail if they differ from what is committed |
+| `make api-update` | Update `PublicAPI.*.txt` from the code: add new public members (RS0016) and remove deleted ones (RS0017) |
+| `make api-check` | Run `make api-update` and fail if `PublicAPI.*.txt` then differ from what is committed |
 | `make docs` | docfx API reference into `docs/` (docfx is pinned in `.config/dotnet-tools.json`) |
 | `make api-compat BASE=<ref>` | Breaking-change check of the public API against a git ref (default `main`), with ApiCompat |
 | `make pack` | NuGet packages into `nupkgs/` |
@@ -64,8 +66,8 @@ does the same for the libraries. The pre-commit hook (`lefthook.yml`) runs
 ## Public API
 
 - Every public member is listed in the package's `PublicAPI.Unshipped.txt`. The
-  build fails on a public change that isn't recorded (RS0016/RS0017). At 1.0 the
-  release moves the entries to `PublicAPI.Shipped.txt`.
+  build fails on a public change that isn't recorded (RS0016/RS0017); `make api-update`
+  records it. At 1.0 the release moves the entries to `PublicAPI.Shipped.txt`.
 - Every public member has an XML doc comment; missing or invalid docs fail the build.
 - Breaking changes against the base branch fail the API compatibility check
   (`make api-compat`, and a CI job on every pull request) unless the pull request

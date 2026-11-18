@@ -7,7 +7,7 @@ DOTNET ?= dotnet
 # The public API files that api-check keeps in sync with the code (a git pathspec).
 PUBLIC_API_PATHSPEC := 'src/*/PublicAPI.*.txt'
 
-.PHONY: build test lint format format-check api-check api-check-selftest api-compat docs pack pack-check clean restore tools
+.PHONY: build test lint format format-check api-update api-checkapi-check-selftest api-compat docs pack pack-check clean restore tools
 
 restore:
 	$(DOTNET) restore $(SOLUTION)
@@ -16,9 +16,12 @@ tools:
 	$(DOTNET) tool restore
 
 # Release build of every project. Warnings are errors, including an unrecorded
-# public API change. Without LaunchDarkly.snk the libraries are public-signed.
+# public API change (RS0016/RS0017). Without LaunchDarkly.snk the libraries are
+# public-signed.
 build: restore
-	$(DOTNET) build $(SOLUTION) --no-restore -c $(CONFIGURATION) -warnaserror
+	@$(DOTNET) build $(SOLUTION) --no-restore -c $(CONFIGURATION) -warnaserror || { \
+		echo "The build failed. If the errors above include RS0016 or RS0017, the public API files (PublicAPI.Shipped.txt / PublicAPI.Unshipped.txt) do not match the code: run \`make api-update\`, review the diff and commit it."; \
+		exit 1; }
 
 # Unit tests run against the Debug build (not strong-named), as in CI.
 # TESTFRAMEWORK=net8.0 limits the run to one target framework.
@@ -39,17 +42,21 @@ format-check: restore
 	$(DOTNET) format whitespace $(SOLUTION) --no-restore --verify-no-changes
 	$(DOTNET) format style $(SOLUTION) --no-restore --verify-no-changes --severity warn
 
-# Regenerate the PublicAPI.*.txt files from the code and fail if they drift from
-# what is committed. A new public member belongs in PublicAPI.Unshipped.txt.
-api-check: restore
-	$(DOTNET) format analyzers $(SOLUTION) --no-restore --diagnostics RS0016 RS0017 --severity hidden
+# Update the PublicAPI.*.txt files from the code: add each new public symbol (RS0016)
+# and remove each one that is gone (RS0017). Review the diff and commit it.
+api-update: restore
+	scripts/api-update.sh
+
+# Run api-update and fail if the PublicAPI.*.txt files then differ from what is
+# committed. A new public member belongs in PublicAPI.Unshipped.txt.
+api-check: api-update
 	@# git status rather than git diff, so a PublicAPI file the fixer creates
 	@# (untracked, for example in a new package) fails the check too.
 	@changes="$$(git status --porcelain --untracked-files=all -- $(PUBLIC_API_PATHSPEC))"; \
 	if [ -n "$$changes" ]; then \
 		echo "$$changes"; \
 		git --no-pager diff -- $(PUBLIC_API_PATHSPEC); \
-		echo "Public API files are out of date or new. Review the changes above and commit them if they are intended."; \
+		echo "The public API files listed above do not match the code. Run \`make api-update\` (this run has already updated them in the working tree), review the diff and commit it if the change is intended."; \
 		exit 1; \
 	fi
 

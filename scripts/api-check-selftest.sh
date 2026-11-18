@@ -2,11 +2,11 @@
 # Self-test of the public API checks, against a fixture repository instead of the real
 # packages. The fixture is a git repository in a temporary folder with one small library
 # (Fixture.Api), its PublicAPI files, and copies of this repository's Makefile,
-# scripts/api-compat.sh, dotnet tool manifest and global.json, so it runs the same
-# commands CI runs:
+# scripts/api-compat.sh, scripts/api-update.sh, dotnet tool manifest and global.json, so
+# it runs the same commands CI runs:
 #
 #   check 1, the report is current: `make build` (RS0016/RS0017 as errors) and
-#            `make api-check`;
+#            `make api-check`, with `make api-update` as the update command;
 #   check 2, a breaking change is declared: scripts/api-compat.sh against the fixture's
 #            base commit, with API_COMPATIBLE=true standing in for the api-compatible
 #            label.
@@ -75,7 +75,7 @@ reset_fixture() {
 
 mkdir -p "$LIB" "$FIX/scripts" "$FIX/.config"
 cp "$ROOT/Makefile" "$ROOT/global.json" "$FIX/"
-cp "$ROOT/scripts/api-compat.sh" "$FIX/scripts/"
+cp "$ROOT/scripts/api-compat.sh" "$ROOT/scripts/api-update.sh" "$FIX/scripts/"
 cp "$ROOT/.config/dotnet-tools.json" "$FIX/.config/"
 analyzers_version="$(python3 -I - "$ROOT/Directory.Packages.props" <<'PY'
 import sys, xml.etree.ElementTree as ET
@@ -193,8 +193,23 @@ fi
 c="check 1: the update command removes a deleted member from the report"
 reset_fixture
 mutate '        public static int Sub(int a, int b) => a - b;' ''
-run make api-check
-if ! run make build; then not_ok "$c" "make build still fails after make api-check"
+run make api-update
+if ! run make build; then not_ok "$c" "make build still fails after make api-update"
+elif grep -q 'Sub(int a, int b)' "$LIB/PublicAPI.Unshipped.txt"; then
+  not_ok "$c" "PublicAPI.Unshipped.txt still lists Sub"
+else ok "$c"; fi
+
+c="check 1: the update command records the removal of a shipped member (*REMOVED*)"
+reset_fixture
+grep 'Calc.Sub(' "$LIB/PublicAPI.Unshipped.txt" >>"$LIB/PublicAPI.Shipped.txt"
+sed -i '/Calc\.Sub(/d' "$LIB/PublicAPI.Unshipped.txt"
+mutate '        public static int Sub(int a, int b) => a - b;' ''
+run make api-update
+if ! run make build; then not_ok "$c" "make build still fails after make api-update"
+elif ! grep -q 'Calc.Sub(' "$LIB/PublicAPI.Shipped.txt"; then not_ok "$c" "the shipped line was deleted"
+elif ! grep -q '^\*REMOVED\*static Fixture.Api.Calc.Sub(int a, int b) -> int$' "$LIB/PublicAPI.Unshipped.txt"; then
+  cp "$LIB/PublicAPI.Unshipped.txt" "$LOG"
+  not_ok "$c" "PublicAPI.Unshipped.txt has no *REMOVED* line for Sub"
 else ok "$c"; fi
 
 c="check 1: a nullability change (string to string?) shows in the report"

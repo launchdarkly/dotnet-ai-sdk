@@ -27,6 +27,7 @@ make build         # Release build, warnings as errors
 make test          # unit tests (TESTFRAMEWORK=net8.0 for one framework)
 make lint          # analyzers
 make format        # apply formatting; make format-check verifies it
+make api-update    # update the public API files from the code
 make api-check     # public API files match the code
 make docs          # API reference with docfx
 ```
@@ -35,7 +36,7 @@ The .NET Framework 4.6.2 tests run on Windows only.
 
 ### Public API changes
 
-A new or changed public member must be recorded in the package's `PublicAPI.Unshipped.txt`, or the build fails. `make api-check` updates the file; review the diff and commit it with the change. Every public member needs an XML doc comment.
+A new or changed public member must be recorded in the package's `PublicAPI.Unshipped.txt`, or the build fails. `make api-update` updates the files: it adds each new public member and removes each one that is gone (a removed member that is in `PublicAPI.Shipped.txt` gets a `*REMOVED*` line in `PublicAPI.Unshipped.txt`). Review the diff and commit it with the change. `make api-check` runs the update and fails if the files then differ from what is committed. Every public member needs an XML doc comment.
 
 ### Strong naming
 
