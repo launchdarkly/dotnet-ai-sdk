@@ -76,6 +76,10 @@ namespace LaunchDarkly.AI.Server.Internal
             }
         }
 
+        // -2^63 and 2^63, both exact as doubles.
+        private const double LongMinAsDouble = -9223372036854775808.0;
+        private const double LongMaxPlusOneAsDouble = 9223372036854775808.0;
+
         /// <summary>
         /// Reads the pinned model config version: a JSON number that is finite, integral (such as
         /// <c>3.0</c>) and in <see cref="long"/> range, or a string of integer text (<c>"3"</c>,
@@ -105,8 +109,11 @@ namespace LaunchDarkly.AI.Server.Internal
                     return null;
             }
 
+            // long.MaxValue rounds up to 2^63 as a double, so the range is checked against the exact
+            // bounds -2^63 (in range) and 2^63 (out of range), and an out-of-range value is left out
+            // rather than clamped.
             if (double.IsNaN(number) || double.IsInfinity(number) || Math.Floor(number) != number ||
-                number < long.MinValue || number > long.MaxValue)
+                number < LongMinAsDouble || number >= LongMaxPlusOneAsDouble)
             {
                 return null;
             }
