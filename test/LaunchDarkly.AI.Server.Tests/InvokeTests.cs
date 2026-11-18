@@ -194,6 +194,37 @@ namespace LaunchDarkly.AI.Server.Tests
         }
 
         [Fact]
+        public async Task JudgeWarningIsPerConfigKeyAndRearmedByShutdown()
+        {
+            const string otherKey = "other-config";
+            static void WithJudge(JsonObject j) => j["judgeConfiguration"] = new JsonObject
+            {
+                ["judges"] = new JsonArray(new JsonObject { ["key"] = "judge-a", ["samplingRate"] = 1 }),
+            };
+            int JudgeWarnings() => Warnings.Count(w => w.IndexOf("judge", StringComparison.OrdinalIgnoreCase) >= 0);
+            Task InvokeOther() => LdAi.Config(new ConfigArgs { Key = otherKey, Handler = Returning("ok") })
+                .InvokeAsync("hi", Fixtures.UserContext);
+
+            SetVariation(WithJudge);
+            Fake.Variations[otherKey] = Fixtures.EnabledConfig(edit: WithJudge);
+            for (var i = 0; i < 2; i++)
+            {
+                await InvokeAsync(Returning("ok"));
+                await InvokeOther();
+            }
+
+            Assert.Equal(2, JudgeWarnings());
+
+            await LdAi.ShutdownAsync();
+            var next = new FakeLdClient();
+            next.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig(edit: WithJudge);
+            await LdAi.InitClientAsync(next);
+            await InvokeAsync(Returning("ok"));
+
+            Assert.Equal(3, JudgeWarnings());
+        }
+
+        [Fact]
         public async Task ConfigThroughTheClientInterfaceBehavesTheSame()
         {
             SetVariation();

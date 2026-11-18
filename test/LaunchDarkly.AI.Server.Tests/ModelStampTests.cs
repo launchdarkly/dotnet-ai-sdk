@@ -107,6 +107,19 @@ namespace LaunchDarkly.AI.Server.Tests
             Assert.Equal(3L, response.TrackData.ModelVersion);
         }
 
+        [Theory]
+        [InlineData("\" 3 \"", 3L)]
+        [InlineData("\"3.0\"", null)]
+        [InlineData("9223372036854775808", null)]
+        [InlineData("1e300", null)]
+        public async Task DotNetCoercionCases(string rawVersion, long? expected)
+        {
+            var response = await InvokeWithMeta("my-model", JsonNode.Parse(rawVersion));
+
+            Assert.Equal("ok", response.Response);
+            Assert.Equal(expected, response.TrackData.ModelVersion);
+        }
+
         [Fact]
         public async Task StampsAreNotReadFromTheModelSection()
         {

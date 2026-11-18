@@ -76,6 +76,16 @@ namespace LaunchDarkly.AI.Server.Tests
         }
 
         [Fact]
+        public async Task NativeToolStubTracksWithMetricOne()
+        {
+            var request = await ReceivedAsync(new Dictionary<string, ToolHandler> { ["web-search"] = new NativeTool("WebSearch") });
+
+            await ((FunctionTool)request.ToolHandlers["web-search"]).InvokeAsync(Fixtures.Json("{}"));
+
+            Assert.Equal(1.0, Assert.Single(Fake.Events(ToolCall)).Metric);
+        }
+
+        [Fact]
         public async Task OrdinaryToolHasNoWrappedNativeTool()
         {
             var request = await ReceivedAsync(new Dictionary<string, ToolHandler> { ["t"] = new FunctionTool((_, _) => Task.FromResult<object?>(null)) });

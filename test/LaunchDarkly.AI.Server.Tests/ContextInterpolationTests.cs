@@ -64,6 +64,23 @@ namespace LaunchDarkly.AI.Server.Tests
         }
 
         [Fact]
+        public async Task CallerSuppliedLdEntryIsReplaced()
+        {
+            var fake = UseFakeClient();
+            fake.Variations[Fixtures.ConfigKey] = Fixtures.EnabledConfig("OpenAI");
+            var calls = new List<HandlerRequest>();
+            var handler = Fixtures.RecordingHandler("OpenAI", HandlerModes.Messages, calls);
+
+            var response = await LdAi.Config(new ConfigArgs { Key = Fixtures.ConfigKey, Handler = handler })
+                .InvokeAsync("hi", Fixtures.UserContext, new Dictionary<string, object?> { ["__ld"] = "custom" });
+
+            var request = Assert.Single(calls);
+            var trackData = Assert.IsType<TrackData>(request.Variables["__ld"]);
+            Assert.Equal(response.TrackData.RunId, trackData.RunId);
+            Assert.DoesNotContain("custom", request.Variables.Values);
+        }
+
+        [Fact]
         public async Task InjectionHappensWithSeveralHandlers()
         {
             var request = await InvokeAsync(null, manyHandlers: true);

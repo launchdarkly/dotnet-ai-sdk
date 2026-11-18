@@ -51,6 +51,9 @@ namespace LaunchDarkly.AI.TestHelpers
         /// <summary>When true, Flush throws.</summary>
         public bool FlushThrows { get; set; }
 
+        /// <summary>When true, Dispose (close) throws after counting the call.</summary>
+        public bool CloseThrows { get; set; }
+
         /// <summary>What Initialized reports.</summary>
         public bool IsInitialized { get; set; } = true;
 
@@ -168,7 +171,14 @@ namespace LaunchDarkly.AI.TestHelpers
             return true;
         }
 
-        public void Dispose() => Closes++;
+        public void Dispose()
+        {
+            Closes++;
+            if (CloseThrows)
+            {
+                throw new InvalidOperationException("close exploded");
+            }
+        }
 
         public bool IsOffline() => false;
 

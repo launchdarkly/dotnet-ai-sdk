@@ -113,6 +113,21 @@ namespace LaunchDarkly.AI.Server.Tests
         }
 
         [Fact]
+        public async Task CloseErrorDoesNotReplaceTheInitError()
+        {
+            NextClient.IsInitialized = false;
+            NextClient.CloseThrows = true;
+
+            var ex = await Record.ExceptionAsync(() => LdAi.InitClientAsync(new InitOptions { SdkKey = "sdk-key" }));
+
+            Assert.IsAssignableFrom<LdAiException>(ex);
+            Assert.DoesNotContain("close exploded", ex!.ToString(), StringComparison.Ordinal);
+            var failed = Assert.Single(Built);
+            Assert.Equal(1, failed.Closes);
+            Assert.Throws<InvalidOperationException>(() => LdAi.GetClient());
+        }
+
+        [Fact]
         public async Task FailedInitIsNotCached()
         {
             await Assert.ThrowsAnyAsync<LdAiException>(() => LdAi.InitClientAsync());
