@@ -7,7 +7,7 @@ DOTNET ?= dotnet
 # The public API files that api-check keeps in sync with the code (a git pathspec).
 PUBLIC_API_PATHSPEC := 'src/*/PublicAPI.*.txt'
 
-.PHONY: build test lint format format-check api-update api-check api-check-selftest api-compat docs pack pack-check clean restore tools
+.PHONY: build test lint format format-check api-update api-check api-check-selftest api-compat docs examples pack pack-check clean restore tools
 
 restore:
 	$(DOTNET) restore $(SOLUTION)
@@ -77,6 +77,19 @@ api-compat: tools
 docs: tools
 	$(DOTNET) tool run docfx docfx.json
 
+# Run the example scenarios offline (LD_SDK_KEY unset): the agent and history success
+# cases must exit 0, and the missing-flag case must exit 1. Responses go to output/.
+EXAMPLES_RUN := env -u LD_SDK_KEY $(DOTNET) run --project examples --no-build -c Debug --
+examples: restore
+	$(DOTNET) build examples --no-restore -c Debug
+	$(EXAMPLES_RUN) agent launch-darkly-documentation-summarizer "What is a feature flag?"
+	$(EXAMPLES_RUN) history launch-darkly-documentation-summarizer "What did I say matters to me?"
+	@if $(EXAMPLES_RUN) agent doesnt-exist "hi"; then \
+		echo "examples: the missing-flag case exited 0; expected 1"; exit 1; \
+	else \
+		status=$$?; test $$status -eq 1 || { echo "examples: the missing-flag case exited $$status; expected 1"; exit 1; }; \
+	fi
+
 pack: build
 	$(DOTNET) pack $(SOLUTION) --no-build -c $(CONFIGURATION) -o nupkgs
 
@@ -88,4 +101,4 @@ pack-check:
 
 clean:
 	$(DOTNET) clean $(SOLUTION)
-	rm -rf nupkgs api docs
+	rm -rf nupkgs api docs output

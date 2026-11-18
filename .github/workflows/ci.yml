@@ -74,6 +74,10 @@ jobs:
       - name: Docs
         run: make docs
 
+      # Runs the example scenarios offline: success cases exit 0, the missing flag exits 1.
+      - name: Examples
+        run: make examples
+
       - name: Pack
         run: make pack
 

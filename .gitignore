@@ -6,6 +6,8 @@ nupkgs/
 *.nupkg
 *.snupkg
 TestResults/
+# Responses the examples write
+output/
 *.trx
 *.coverage
 coverage*.xml
