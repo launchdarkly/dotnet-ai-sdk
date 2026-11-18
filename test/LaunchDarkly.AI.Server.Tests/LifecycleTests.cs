@@ -255,19 +255,61 @@ namespace LaunchDarkly.AI.Server.Tests
             await Task.Delay(50);
             await LdAi.InitClientAsync(passed);
             release.Set();
-            try
-            {
-                await init;
-            }
-            catch (LdAiException)
-            {
-                // Whether the replaced attempt's caller rejects or gets the passed client is
-                // left to the implementation; what matters is below.
-            }
+            var ex = await Assert.ThrowsAsync<LdAiException>(() => init);
+            Assert.Contains("abandoned", ex.Message, StringComparison.Ordinal);
 
             Assert.Equal(1, Assert.Single(Built).Closes);
             Assert.Same(passed, LdAi.GetClient().LdClient);
             Assert.Equal(0, passed.Closes);
+        }
+
+        [Fact]
+        public async Task ShutdownAfterALaterAttemptCompletedStillRejectsTheFirstCaller()
+        {
+            using var release = new ManualResetEventSlim(false);
+            var builds = 0;
+            OnBuild = (_, _) =>
+            {
+                if (Interlocked.Increment(ref builds) == 1)
+                {
+                    release.Wait(TimeSpan.FromSeconds(10));
+                }
+            };
+
+            var first = LdAi.InitClientAsync(new InitOptions { SdkKey = "sdk-key" });
+            await Task.Delay(50);
+            await LdAi.ShutdownAsync();
+            var second = await LdAi.InitClientAsync(new InitOptions { SdkKey = "sdk-key" });
+            release.Set();
+
+            await Assert.ThrowsAnyAsync<LdAiException>(() => first);
+            // The factory records a client after OnBuild returns, so the first attempt's
+            // client is recorded last; tell them apart by reference.
+            Assert.Equal(2, Built.Count);
+            var later = Assert.Single(Built, c => ReferenceEquals(c, second.LdClient));
+            var abandoned = Assert.Single(Built, c => !ReferenceEquals(c, second.LdClient));
+            Assert.Equal(1, abandoned.Closes);
+            Assert.Same(later, LdAi.GetClient().LdClient);
+            Assert.Equal(0, later.Closes);
+        }
+
+        [Fact]
+        public async Task ShutdownAfterAPassedClientReplacedTheAttempt()
+        {
+            using var release = new ManualResetEventSlim(false);
+            OnBuild = (_, _) => release.Wait(TimeSpan.FromSeconds(10));
+            var passed = new FakeLdClient();
+
+            var init = LdAi.InitClientAsync(new InitOptions { SdkKey = "sdk-key" });
+            await Task.Delay(50);
+            await LdAi.InitClientAsync(passed);
+            await LdAi.ShutdownAsync();
+            release.Set();
+
+            await Assert.ThrowsAnyAsync<LdAiException>(() => init);
+            Assert.Equal(1, Assert.Single(Built).Closes);
+            Assert.Equal(1, passed.Closes);
+            Assert.Throws<InvalidOperationException>(() => LdAi.GetClient());
         }
 
         [Fact]
