@@ -68,6 +68,9 @@ jobs:
       - name: Public API check
         run: make api-check
 
+      - name: Public API check self-test
+        run: make api-check-selftest
+
       - name: Docs
         run: make docs
 

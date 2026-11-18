@@ -7,7 +7,7 @@ DOTNET ?= dotnet
 # The public API files that api-check keeps in sync with the code (a git pathspec).
 PUBLIC_API_PATHSPEC := 'src/*/PublicAPI.*.txt'
 
-.PHONY: build test lint format format-check api-check api-compat docs pack pack-check clean restore tools
+.PHONY: build test lint format format-check api-check api-check-selftest api-compat docs pack pack-check clean restore tools
 
 restore:
 	$(DOTNET) restore $(SOLUTION)
@@ -52,6 +52,11 @@ api-check: restore
 		echo "Public API files are out of date or new. Review the changes above and commit them if they are intended."; \
 		exit 1; \
 	fi
+
+# Self-test of the public API checks (make build / make api-check, and api-compat.sh)
+# against a fixture library in a temporary git repository, not the real packages.
+api-check-selftest: tools
+	scripts/api-check-selftest.sh
 
 # Breaking-change check of the public API against a git ref (default: main), with
 # ApiCompat (pinned in .config/dotnet-tools.json). The ref is built in a temporary
