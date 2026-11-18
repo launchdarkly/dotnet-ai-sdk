@@ -77,8 +77,9 @@ namespace LaunchDarkly.AI.Server.Internal
         }
 
         /// <summary>
-        /// Reads the pinned model config version: an integer, an integral number such as
-        /// <c>3.0</c>, or a string holding one. Anything else is absent.
+        /// Reads the pinned model config version: a JSON number that is finite, integral (such as
+        /// <c>3.0</c>) and in <see cref="long"/> range, or a string of integer text (<c>"3"</c>,
+        /// <c>" 3 "</c>; not <c>"3.0"</c>). Anything else is absent.
         /// </summary>
         /// <param name="value">The raw <c>_ldMeta.modelVersion</c>.</param>
         /// <returns>The version, or <see langword="null"/>.</returns>
@@ -96,14 +97,10 @@ namespace LaunchDarkly.AI.Server.Internal
                     number = value.GetDouble();
                     break;
                 case JsonValueKind.String:
-                    var text = value.GetString();
-                    if (string.IsNullOrWhiteSpace(text) ||
-                        !double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out number))
-                    {
-                        return null;
-                    }
-
-                    break;
+                    // Integer text only, so "3" and " 3 " are versions and "3.0" and "1.5" are not.
+                    return long.TryParse(value.GetString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
+                        ? parsed
+                        : null;
                 default:
                     return null;
             }
