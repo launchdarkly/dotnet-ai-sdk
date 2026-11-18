@@ -324,6 +324,22 @@ namespace LaunchDarkly.AI.Server.Tests
         }
 
         [Fact]
+        public async Task SecondPassedClientKeepsTheInstalledOne()
+        {
+            var first = new FakeLdClient();
+            var second = new FakeLdClient();
+            var installed = await LdAi.InitClientAsync(first);
+
+            var again = await LdAi.InitClientAsync(second);
+
+            Assert.Same(installed, again);
+            Assert.Same(first, again.LdClient);
+            Assert.Same(first, LdAi.GetClient().LdClient);
+            Assert.Equal(0, first.Closes);
+            Assert.Equal(0, second.Closes);
+        }
+
+        [Fact]
         public void GetClientThrowsBeforeInit()
         {
             var ex = Assert.Throws<InvalidOperationException>(() => LdAi.GetClient());
