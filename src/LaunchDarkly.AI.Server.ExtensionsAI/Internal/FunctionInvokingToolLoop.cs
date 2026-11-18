@@ -66,17 +66,25 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Internal
 
             var response = await client.GetResponseAsync(request.Messages, request.Options, cancellationToken).ConfigureAwait(false);
 
-            // The client marks every call it ran as informational. One that is left was not offered.
+            // The client marks every call it ran as informational, so a call that is left means it stopped
+            // on a tool that was not offered, before running any call in that response. The error names
+            // that tool, not an offered call listed before it.
             var unhandled = response.Messages
                 .SelectMany(m => m.Contents)
                 .OfType<FunctionCallContent>()
-                .FirstOrDefault(c => !c.InformationalOnly);
-            if (unhandled != null)
+                .Where(c => !c.InformationalOnly)
+                .ToList();
+            if (unhandled.Count > 0)
             {
-                throw OfferedTools.NotOffered(unhandled.Name);
+                var offered = new HashSet<string>(
+                    (request.Options.Tools ?? Enumerable.Empty<AITool>()).Select(t => t.Name),
+                    StringComparer.Ordinal);
+                var culprit = unhandled.FirstOrDefault(c => !offered.Contains(c.Name)) ?? unhandled[0];
+                throw OfferedTools.NotOffered(culprit.Name);
             }
 
-            return turns.LastResponse ?? response;
+            return turns.LastTurn
+                ?? throw new InvalidOperationException("The tool loop finished without a model turn.");
         }
 
         /// <summary>
@@ -93,8 +101,11 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Internal
                 _turn = turn;
             }
 
-            /// <summary>The last turn's response, whose text is the run's output.</summary>
-            internal ChatResponse? LastResponse { get; private set; }
+            /// <summary>
+            /// The last turn on its own, whose text is the run's output. A copy, because the function-invoking
+            /// client replaces the last response's messages with the whole run's before it returns it.
+            /// </summary>
+            internal ChatResponse? LastTurn { get; private set; }
 
             public async Task<ChatResponse> GetResponseAsync(
                 IEnumerable<ChatMessage> messages,
@@ -102,7 +113,11 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Internal
                 CancellationToken cancellationToken = default)
             {
                 var response = await _turn(messages.ToList(), options ?? new ChatOptions(), cancellationToken).ConfigureAwait(false);
-                LastResponse = response;
+                LastTurn = new ChatResponse(response.Messages.ToList())
+                {
+                    ModelId = response.ModelId,
+                    FinishReason = response.FinishReason,
+                };
                 return response;
             }
 

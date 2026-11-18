@@ -35,6 +35,24 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
         }
 
         [Fact]
+        public async Task OutputIsTheLastTurnsTextOnly()
+        {
+            Chat.Then(_ => new Microsoft.Extensions.AI.ChatResponse(new Microsoft.Extensions.AI.ChatMessage(
+                    Microsoft.Extensions.AI.ChatRole.Assistant,
+                    new List<Microsoft.Extensions.AI.AIContent>
+                    {
+                        new Microsoft.Extensions.AI.TextContent("let me check"),
+                        new Microsoft.Extensions.AI.FunctionCallContent("call-a", "a", new Dictionary<string, object?>()),
+                    })))
+                .ThenText("the answer");
+
+            var result = await RunAsync(Config() with { Tools = ConfigTools("a") }, tools: new Dictionary<string, ToolHandler> { ["a"] = Tool() });
+
+            Assert.Equal(2, Chat.Requests.Count);
+            Assert.Equal("the answer", result.Output);
+        }
+
+        [Fact]
         public async Task ConsecutiveToolCallsRunOnceEachInOrder()
         {
             var ran = new List<string>();
@@ -73,6 +91,22 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI.Tests
 
             Assert.Contains("privileged", ex.Message, StringComparison.Ordinal);
             Assert.Empty(ran);
+        }
+
+        [Fact]
+        public async Task UnofferedCallAfterAnOfferedOneFailsClosedNamingIt()
+        {
+            var ran = new List<string>();
+            Chat.ThenToolCalls(("c1", "safe", new Dictionary<string, object?>()), ("c2", "privileged", new Dictionary<string, object?>()))
+                .ThenText("never");
+
+            var ex = await Assert.ThrowsAnyAsync<LdAiException>(() => RunAsync(Config() with { Tools = ConfigTools("safe") },
+                tools: new Dictionary<string, ToolHandler> { ["safe"] = Tool(ran, name: "safe"), ["privileged"] = Tool(ran, name: "privileged") }));
+
+            Assert.Contains("privileged", ex.Message, StringComparison.Ordinal);
+            Assert.DoesNotContain("\"safe\"", ex.Message, StringComparison.Ordinal);
+            Assert.Empty(ran);
+            Assert.Single(Chat.Requests);
         }
 
         [Theory]
