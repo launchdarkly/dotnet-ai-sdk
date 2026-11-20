@@ -142,7 +142,7 @@ does the same for the libraries. The pre-commit hook (`lefthook.yml`) runs
 ## Versioning and release
 
 - The csproj `Version` of each package and `SdkInfo.Version` move together. They
-  are `0.0.0` in the skeleton; each feature pull request sets the next 0.x working version.
+  are `0.1.0`, the first working version; each feature pull request sets the next 0.x working version.
 - No NuGet push, GitHub release or version tag before 1.0. release-please runs
   only when dispatched by hand, and its first run is the 1.0 release.
 - The release workflow strong-names the assemblies with the shared key, signs them

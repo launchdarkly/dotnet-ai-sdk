@@ -13,6 +13,6 @@ namespace LaunchDarkly.AI.Server.ExtensionsAI
         /// <summary>
         /// The package version. Updated by hand for each working version, and by the release tooling at release time.
         /// </summary>
-        internal const string Version = "0.0.0"; // x-release-please-version
+        internal const string Version = "0.1.0"; // x-release-please-version
     }
 }
