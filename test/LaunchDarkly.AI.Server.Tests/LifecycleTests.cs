@@ -232,10 +232,10 @@ namespace LaunchDarkly.AI.Server.Tests
         public async Task ShutdownDuringAnAttemptClosesTheClientItBuilds()
         {
             using var release = new ManualResetEventSlim(false);
-            var building = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var building = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             OnBuild = (_, _) =>
             {
-                building.TrySetResult();
+                building.TrySetResult(true);
                 release.Wait(TimeSpan.FromSeconds(10));
             };
 
@@ -254,10 +254,10 @@ namespace LaunchDarkly.AI.Server.Tests
         public async Task PassedClientDuringAnAttemptReplacesIt()
         {
             using var release = new ManualResetEventSlim(false);
-            var building = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var building = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             OnBuild = (_, _) =>
             {
-                building.TrySetResult();
+                building.TrySetResult(true);
                 release.Wait(TimeSpan.FromSeconds(10));
             };
             var passed = new FakeLdClient();
@@ -279,13 +279,13 @@ namespace LaunchDarkly.AI.Server.Tests
         public async Task ShutdownAfterALaterAttemptCompletedStillRejectsTheFirstCaller()
         {
             using var release = new ManualResetEventSlim(false);
-            var building = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var building = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var builds = 0;
             OnBuild = (_, _) =>
             {
                 if (Interlocked.Increment(ref builds) == 1)
                 {
-                    building.TrySetResult();
+                    building.TrySetResult(true);
                     release.Wait(TimeSpan.FromSeconds(10));
                 }
             };
@@ -312,10 +312,10 @@ namespace LaunchDarkly.AI.Server.Tests
         public async Task ShutdownAfterAPassedClientReplacedTheAttempt()
         {
             using var release = new ManualResetEventSlim(false);
-            var building = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var building = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             OnBuild = (_, _) =>
             {
-                building.TrySetResult();
+                building.TrySetResult(true);
                 release.Wait(TimeSpan.FromSeconds(10));
             };
             var passed = new FakeLdClient();

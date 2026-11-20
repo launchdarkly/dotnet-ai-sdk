@@ -87,7 +87,7 @@ namespace LaunchDarkly.AI.Server.Tests
             await CallAsync(name, fake);
 
             var events = fake.Events(SdkUsage);
-            Assert.Equal(row.Ids.OrderBy(i => i, StringComparer.Ordinal), events.Select(e => e.DataString("helper")).OrderBy(i => i, StringComparer.Ordinal));
+            Assert.Equal(row.Ids.OrderBy(i => i, StringComparer.Ordinal), events.Select(e => e.DataString("helper")!).OrderBy(i => i, StringComparer.Ordinal));
             foreach (var e in events)
             {
                 Assert.Equal(1.0, e.Metric);
