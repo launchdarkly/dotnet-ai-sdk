@@ -1,9 +1,9 @@
 # Builds, strong-names, Authenticode-signs and packs the three packages, then pushes them
-# to NuGet. Nothing is published before 1.0.
+# to NuGet. 0.x releases are pre-1.0 betas for testing.
 #
 # The NuGet push is gated twice:
 #   - this workflow runs only when dispatched by hand or called by release-please.yml
-#     (itself dispatch-only), never on push;
+#     after a release PR is merged, never on a push of its own;
 #   - the push job runs in the protected "nuget-publish" environment, which needs an
 #     approval from a maintainer before it starts.
 # A dry run (the default when dispatched by hand) builds, signs and packs, and skips the push.

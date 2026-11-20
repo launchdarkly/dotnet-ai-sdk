@@ -4,7 +4,7 @@
     ".": {
       "release-type": "simple",
       "package-name": "dotnet-ai-sdk",
-      "release-as": "1.0.0",
+      "initial-version": "0.1.0",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": false,
       "include-component-in-tag": false,
@@ -13,6 +13,7 @@
         "src/LaunchDarkly.AI.Server/LaunchDarkly.AI.Server.csproj",
         "src/LaunchDarkly.AI.Server/SdkInfo.cs",
         "src/LaunchDarkly.AI.Server.ExtensionsAI/LaunchDarkly.AI.Server.ExtensionsAI.csproj",
+        "src/LaunchDarkly.AI.Server.ExtensionsAI/PackageInfo.cs",
         "src/LaunchDarkly.AI/LaunchDarkly.AI.csproj",
         "PROVENANCE.md"
       ],
