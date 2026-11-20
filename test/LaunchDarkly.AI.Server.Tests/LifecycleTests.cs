@@ -232,10 +232,16 @@ namespace LaunchDarkly.AI.Server.Tests
         public async Task ShutdownDuringAnAttemptClosesTheClientItBuilds()
         {
             using var release = new ManualResetEventSlim(false);
-            OnBuild = (_, _) => release.Wait(TimeSpan.FromSeconds(10));
+            var building = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            OnBuild = (_, _) =>
+            {
+                building.TrySetResult();
+                release.Wait(TimeSpan.FromSeconds(10));
+            };
 
             var init = LdAi.InitClientAsync(new InitOptions { SdkKey = "sdk-key" });
-            await Task.Delay(50);
+            // Wait until the attempt is inside the blocked build.
+            await building.Task.WaitAsync(TimeSpan.FromSeconds(10));
             await LdAi.ShutdownAsync();
             release.Set();
 
@@ -248,11 +254,17 @@ namespace LaunchDarkly.AI.Server.Tests
         public async Task PassedClientDuringAnAttemptReplacesIt()
         {
             using var release = new ManualResetEventSlim(false);
-            OnBuild = (_, _) => release.Wait(TimeSpan.FromSeconds(10));
+            var building = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            OnBuild = (_, _) =>
+            {
+                building.TrySetResult();
+                release.Wait(TimeSpan.FromSeconds(10));
+            };
             var passed = new FakeLdClient();
 
             var init = LdAi.InitClientAsync(new InitOptions { SdkKey = "sdk-key" });
-            await Task.Delay(50);
+            // Wait until the attempt is inside the blocked build.
+            await building.Task.WaitAsync(TimeSpan.FromSeconds(10));
             await LdAi.InitClientAsync(passed);
             release.Set();
             var ex = await Assert.ThrowsAsync<LdAiException>(() => init);
@@ -267,17 +279,20 @@ namespace LaunchDarkly.AI.Server.Tests
         public async Task ShutdownAfterALaterAttemptCompletedStillRejectsTheFirstCaller()
         {
             using var release = new ManualResetEventSlim(false);
+            var building = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var builds = 0;
             OnBuild = (_, _) =>
             {
                 if (Interlocked.Increment(ref builds) == 1)
                 {
+                    building.TrySetResult();
                     release.Wait(TimeSpan.FromSeconds(10));
                 }
             };
 
             var first = LdAi.InitClientAsync(new InitOptions { SdkKey = "sdk-key" });
-            await Task.Delay(50);
+            // Wait until the attempt is inside the blocked build.
+            await building.Task.WaitAsync(TimeSpan.FromSeconds(10));
             await LdAi.ShutdownAsync();
             var second = await LdAi.InitClientAsync(new InitOptions { SdkKey = "sdk-key" });
             release.Set();
@@ -297,11 +312,17 @@ namespace LaunchDarkly.AI.Server.Tests
         public async Task ShutdownAfterAPassedClientReplacedTheAttempt()
         {
             using var release = new ManualResetEventSlim(false);
-            OnBuild = (_, _) => release.Wait(TimeSpan.FromSeconds(10));
+            var building = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            OnBuild = (_, _) =>
+            {
+                building.TrySetResult();
+                release.Wait(TimeSpan.FromSeconds(10));
+            };
             var passed = new FakeLdClient();
 
             var init = LdAi.InitClientAsync(new InitOptions { SdkKey = "sdk-key" });
-            await Task.Delay(50);
+            // Wait until the attempt is inside the blocked build.
+            await building.Task.WaitAsync(TimeSpan.FromSeconds(10));
             await LdAi.InitClientAsync(passed);
             await LdAi.ShutdownAsync();
             release.Set();
