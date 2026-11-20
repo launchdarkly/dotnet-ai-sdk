@@ -101,6 +101,8 @@ cat >"$LIB/Fixture.Api.csproj" <<EOF
 </Project>
 EOF
 cat >"$LIB/Api.cs" <<'EOF'
+using System.Collections.Generic;
+
 namespace Fixture.Api
 {
     public static class Calc
@@ -115,6 +117,8 @@ namespace Fixture.Api
         public static string Label(string text) => text;
         public static string Greet(string name, string greeting = "Hello") => greeting + " " + name;
         public static string Echo(string text) => text;
+        public static int Pair(KeyValuePair<int, string> pair = default(KeyValuePair<int, string>), int count = 1) => count;
+        public static int Entry(KeyValuePair<int, string> entry = default(KeyValuePair<int, string>)) => 0;
     }
 
     public class Widget
@@ -310,7 +314,14 @@ breaking "a member that becomes required" \
 breaking "a member of a public struct that becomes required" \
   'public int X { get; set; }' 'public required int X { get; set; }' 'error CPX002'
 breaking "a changed parameter default" \
-  'string greeting = "Hello"' 'string greeting = "Hi"'
+  'string greeting = "Hello"' 'string greeting = "Hi"' 'error CPX001'
+# A default with a comma inside brackets is one value, so the parameters after it are
+# still compared.
+breaking "a changed default after a default(KeyValuePair<int, string>)" \
+  'int count = 1' 'int count = 2' 'error CPX001'
+breaking "a default(KeyValuePair<int, string>) parameter that becomes required" \
+  'Entry(KeyValuePair<int, string> entry = default(KeyValuePair<int, string>))' \
+  'Entry(KeyValuePair<int, string> entry)' 'error CPX001'
 
 c="check 2: an added name passes undeclared"
 reset_fixture

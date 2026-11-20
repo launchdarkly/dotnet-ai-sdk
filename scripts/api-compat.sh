@@ -124,7 +124,8 @@ def report(folder):
     return lines
 
 def value_end(line, j):
-    """Where a default value that starts at j ends: the next , or ) outside brackets and quotes."""
+    """Where a default value that starts at j ends: the next , or ) outside brackets and quotes,
+    so default(KeyValuePair<int, string>) is one value."""
     quote, depth = None, 0
     while j < len(line):
         c = line[j]
@@ -139,7 +140,7 @@ def value_end(line, j):
             depth += 1
         elif c in ")>]" and depth:
             depth -= 1
-        elif c in ",)":
+        elif c in ",)" and depth == 0:
             break
         j += 1
     return j
