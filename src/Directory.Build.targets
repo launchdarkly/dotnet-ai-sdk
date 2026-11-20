@@ -1,0 +1,14 @@
+<Project>
+  <!-- Public API pinning for every library that ships an assembly. The build fails when
+       the public surface changes without a matching line in PublicAPI.Unshipped.txt.
+       The analyzer package picks up the PublicAPI.Shipped.txt and PublicAPI.Unshipped.txt
+       files next to the project file. The metapackage ships no assembly, so it is skipped. -->
+  <ItemGroup Condition="'$(IncludeBuildOutput)' != 'false'">
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Each package ships its own README.md. -->
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

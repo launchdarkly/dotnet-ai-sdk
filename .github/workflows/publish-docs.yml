@@ -1,0 +1,30 @@
+# Builds the API reference with docfx and publishes it to GitHub Pages.
+# Run by hand, or called by the release workflow after a release.
+name: Publish Docs
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  build-publish:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # docfx.json builds the Debug configuration, so no signing key is needed.
+      - name: Build docs
+        run: make docs
+
+      - name: Publish to GitHub Pages
+        uses: launchdarkly/gh-actions/actions/publish-pages@publish-pages-v1.0.3
+        with:
+          docs_path: docs
+          github_token: ${{ secrets.GITHUB_TOKEN }}

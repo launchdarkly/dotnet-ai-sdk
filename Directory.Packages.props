@@ -1,0 +1,35 @@
+<Project>
+  <!-- Central package versions. A project lists a PackageReference without a Version;
+       the version comes from here. For a library dependency the version is the lowest one
+       the SDK supports, since NuGet treats it as a minimum for consumers. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <!-- Library dependencies -->
+  <ItemGroup>
+    <!-- Version 9 is a major version with breaking changes; stay on 8.x until it is adopted deliberately. -->
+    <PackageVersion Include="LaunchDarkly.ServerSdk" Version="[8.17.2, 9.0.0)" />
+    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.11.0" />
+    <!-- The tool loop (FunctionInvokingChatClient). Kept at the same version as the abstractions. -->
+    <PackageVersion Include="Microsoft.Extensions.AI" Version="10.11.0" />
+    <!-- In-box on net8.0 and later; needed as packages on netstandard2.0 only. -->
+    <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="8.0.1" />
+    <PackageVersion Include="System.Text.Json" Version="8.0.6" />
+  </ItemGroup>
+
+  <!-- Build-time only (never a consumer dependency) -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="4.14.0" />
+    <PackageVersion Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" />
+  </ItemGroup>
+
+  <!-- Tests -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <!-- The net462 test target overrides this with 2.8.2 in test/Directory.Build.props. -->
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+</Project>

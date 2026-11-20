@@ -1,0 +1,6 @@
+# Repository maintainers
+* @launchdarkly/team-sdk-net @launchdarkly/team-ai-agents
+
+# Public API changes need a review from the AI SDK team.
+**/PublicAPI.Shipped.txt @launchdarkly/team-ai-agents @launchdarkly/team-sdk-net
+**/PublicAPI.Unshipped.txt @launchdarkly/team-ai-agents @launchdarkly/team-sdk-net

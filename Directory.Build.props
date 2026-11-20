@@ -1,0 +1,35 @@
+<Project>
+  <!-- Settings shared by every project in the repository: libraries, tests and examples.
+       Library-only settings (packaging, signing, API pinning) are in src/Directory.Build.props;
+       test-only settings are in test/Directory.Build.props. -->
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <Deterministic>true</Deterministic>
+    <DebugType>portable</DebugType>
+    <Configurations>Debug;Release</Configurations>
+    <Platforms>AnyCPU</Platforms>
+  </PropertyGroup>
+
+  <!-- Set by CI so that paths in PDBs are normalised for SourceLink. -->
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Authors>LaunchDarkly</Authors>
+    <Owners>LaunchDarkly</Owners>
+    <Company>LaunchDarkly</Company>
+    <Copyright>Copyright 2026 LaunchDarkly</Copyright>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/launchdarkly/dotnet-ai-sdk</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/launchdarkly/dotnet-ai-sdk</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryBranch>main</RepositoryBranch>
+  </PropertyGroup>
+</Project>

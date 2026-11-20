@@ -1,0 +1,32 @@
+#nullable enable
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandler
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandlerOptions
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandlerOptions.CaptureContent.get -> bool?
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandlerOptions.CaptureContent.init -> void
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandlerOptions.ChatClientHandlerOptions() -> void
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandlerOptions.Providers.get -> System.Collections.Generic.IReadOnlyList<string!>?
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandlerOptions.Providers.init -> void
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessages
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions.CaptureContent.get -> bool?
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions.CaptureContent.init -> void
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions.ChatClient.get -> Microsoft.Extensions.AI.IChatClient?
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions.ChatClient.init -> void
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions.ChatClientFactory.get -> System.Func<LaunchDarkly.AI.Server.AiConfig!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<Microsoft.Extensions.AI.IChatClient!>>?
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions.ChatClientFactory.init -> void
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions.ChatClientMessagesOptions() -> void
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions.History.get -> System.Collections.Generic.IReadOnlyList<LaunchDarkly.AI.Server.HistoryMessage!>?
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions.History.init -> void
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions.Providers.get -> System.Collections.Generic.IReadOnlyList<string!>?
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions.Providers.init -> void
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions.Registry.get -> LaunchDarkly.AI.Server.Registry?
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions.Registry.init -> void
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions.ToolHandlers.get -> System.Collections.Generic.IReadOnlyDictionary<string!, LaunchDarkly.AI.Server.ToolHandler!>?
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions.ToolHandlers.init -> void
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions.Variables.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>?
+LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions.Variables.init -> void
+static LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandler.Create(Microsoft.Extensions.AI.IChatClient! client) -> LaunchDarkly.AI.Server.ProviderHandler!
+static LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandler.Create(Microsoft.Extensions.AI.IChatClient! client, LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandlerOptions! options) -> LaunchDarkly.AI.Server.ProviderHandler!
+static LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandler.Create(System.Func<LaunchDarkly.AI.Server.AiConfig!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<Microsoft.Extensions.AI.IChatClient!>>! clientFactory) -> LaunchDarkly.AI.Server.ProviderHandler!
+static LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandler.Create(System.Func<LaunchDarkly.AI.Server.AiConfig!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<Microsoft.Extensions.AI.IChatClient!>>! clientFactory, LaunchDarkly.AI.Server.ExtensionsAI.ChatClientHandlerOptions! options) -> LaunchDarkly.AI.Server.ProviderHandler!
+static LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessages.InvokeAsync(string! configKey, string? userInput, LaunchDarkly.Sdk.Context context, LaunchDarkly.AI.Server.ExtensionsAI.ChatClientMessagesOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<LaunchDarkly.AI.Server.ProviderResponse!>!

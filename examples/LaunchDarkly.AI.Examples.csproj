@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The examples console project: dotnet run (see README.md).
+       It is built with the solution, so the examples and the documentation snippets under
+       Snippets/ compile against the current public API. It is never packed. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>LaunchDarkly.AI.Examples</AssemblyName>
+    <RootNamespace>LaunchDarkly.AI.Examples</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\src\LaunchDarkly.AI.Server\LaunchDarkly.AI.Server.csproj" />
+    <ProjectReference Include="..\src\LaunchDarkly.AI.Server.ExtensionsAI\LaunchDarkly.AI.Server.ExtensionsAI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="user_preferences.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>LaunchDarkly.AI.Server.ExtensionsAI.Tests</AssemblyName>
+    <RootNamespace>LaunchDarkly.AI.Server.ExtensionsAI.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\LaunchDarkly.AI.Server.ExtensionsAI\LaunchDarkly.AI.Server.ExtensionsAI.csproj" />
+  </ItemGroup>
+
+  <!-- Fakes and helpers shared by the test projects. -->
+  <ItemGroup>
+    <Compile Include="..\Shared\**\*.cs" LinkBase="Shared" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="usage-ids.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

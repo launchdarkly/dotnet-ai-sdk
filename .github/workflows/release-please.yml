@@ -1,0 +1,50 @@
+# Release Please: opens release PRs from the conventional commits, and releases when one
+# is merged.
+#
+#   - Each push to main opens or updates a release PR with the next version and the
+#     changelog, computed from the conventional commits since the last release.
+#   - Merging the release PR tags the release (vX.Y.Z), creates the GitHub release and
+#     calls the release workflow (release.yml), which builds, signs and packs the packages.
+#   - The NuGet push in release.yml waits for a maintainer's approval in the protected
+#     "nuget-publish" environment.
+#
+# 0.x releases are pre-1.0 betas for testing; the API may change before 1.0. The first
+# release PR proposes 0.1.0 ("initial-version" in release-please-config.json), and before
+# 1.0 a feature bumps the minor version ("bump-minor-pre-major").
+#
+# The workflow can also be dispatched by hand; it then runs against the branch it is
+# dispatched on.
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  release-please:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release-created: ${{ steps.release.outputs.release_created }}
+      tag-name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          target-branch: ${{ github.ref_name }}
+
+  release:
+    needs: ['release-please']
+    if: ${{ needs.release-please.outputs.release-created == 'true' }}
+    permissions:
+      id-token: write
+      contents: write
+      attestations: write
+    uses: ./.github/workflows/release.yml
+    with:
+      dry_run: false
+      generate_provenance: true

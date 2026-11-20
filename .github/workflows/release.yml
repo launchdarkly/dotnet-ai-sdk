@@ -1,0 +1,157 @@
+# Builds, strong-names, Authenticode-signs and packs the three packages, then pushes them
+# to NuGet. 0.x releases are pre-1.0 betas for testing.
+#
+# The NuGet push is gated twice:
+#   - this workflow runs only when dispatched by hand or called by release-please.yml
+#     after a release PR is merged, never on a push of its own;
+#   - the push job runs in the protected "nuget-publish" environment, which needs an
+#     approval from a maintainer before it starts.
+# A dry run (the default when dispatched by hand) builds, signs and packs, and skips the push.
+# It still logs in to NuGet (trusted publishing), as the other .NET SDK releases do, so a
+# broken trusted-publisher policy shows up before anyone approves a real push.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: build, sign and pack, but publish nothing.'
+        type: boolean
+        required: true
+        default: true
+      generate_provenance:
+        description: 'Generate provenance attestations. Run from a tag for provenance to succeed.'
+        type: boolean
+        required: true
+        default: true
+  workflow_call:
+    inputs:
+      dry_run:
+        description: 'Dry run: build, sign and pack, but publish nothing.'
+        type: boolean
+        required: true
+      generate_provenance:
+        description: 'Generate provenance attestations.'
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          dotnet-version: 8.0.x
+
+      - name: Test
+        run: make test
+
+      # Fetches the Authenticode signing credentials and the shared strong-name key
+      # (LaunchDarkly.snk, written to the repository root, where the build looks for it).
+      - uses: launchdarkly/gh-actions/actions/release-secrets@release-secrets-v1.2.0
+        name: Get secrets
+        with:
+          aws_assume_role: ${{ vars.AWS_ROLE_ARN }}
+          ssm_parameter_pairs: '/production/common/releasing/digicert/host = DIGICERT_HOST,
+          /production/common/releasing/digicert/api_key = DIGICERT_API_KEY,
+          /production/common/releasing/digicert/client_cert_file_b64 = DIGICERT_CLIENT_CERT_FILE_B64,
+          /production/common/releasing/digicert/client_cert_password = DIGICERT_CLIENT_CERT_PASSWORD,
+          /production/common/releasing/digicert/code_signing_cert_sha1_hash = DIGICERT_CODE_SIGNING_CERT_SHA1_HASH'
+          s3_path_pairs: 'launchdarkly-releaser/dotnet/LaunchDarkly.snk = LaunchDarkly.snk'
+
+      - name: Check the strong-name key is present
+        run: test -f LaunchDarkly.snk
+
+      - name: Release build (strong-named)
+        run: dotnet build LaunchDarkly.AI.Server.sln -c Release -warnaserror
+
+      - name: Sign LaunchDarkly.AI.Server
+        uses: launchdarkly/gh-actions/actions/sign-dlls@sign-dlls-v1.0.0
+        with:
+          build_configuration_path: src/LaunchDarkly.AI.Server/bin/Release/
+          dll_name: LaunchDarkly.AI.Server.dll
+
+      - name: Sign LaunchDarkly.AI.Server.ExtensionsAI
+        uses: launchdarkly/gh-actions/actions/sign-dlls@sign-dlls-v1.0.0
+        with:
+          build_configuration_path: src/LaunchDarkly.AI.Server.ExtensionsAI/bin/Release/
+          dll_name: LaunchDarkly.AI.Server.ExtensionsAI.dll
+
+      # Packs the signed DLLs. LaunchDarkly.AI is a metapackage with no assembly.
+      - name: Pack
+        run: dotnet pack LaunchDarkly.AI.Server.sln --no-build -c Release -o nupkgs
+
+      # Runs on dry runs too, so the trusted-publishing OIDC exchange is validated early.
+      # The key it returns is not used in this job; only the gated publish job pushes.
+      - name: Validate NuGet login (trusted publishing)
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Attest build provenance
+        if: ${{ format('{0}', inputs.generate_provenance) == 'true' && format('{0}', inputs.dry_run) == 'false' }}
+        uses: actions/attest@v4
+        with:
+          subject-path: 'nupkgs/*'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nupkgs
+          path: nupkgs/
+          if-no-files-found: error
+
+  publish:
+    needs: ['build']
+    if: ${{ format('{0}', inputs.dry_run) == 'false' }}
+    runs-on: ubuntu-22.04
+    # Protected environment: a maintainer approves the push before this job starts.
+    environment: nuget-publish
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: nupkgs
+          path: nupkgs/
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: NuGet login via trusted publishing (OIDC)
+        id: login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Publish packages
+        run: |
+          # Push each package before its symbols: nuget.org rejects a .snupkg until the
+          # matching .nupkg exists. The core goes first, since the other two depend on it.
+          # --skip-duplicate keeps re-runs idempotent.
+          for id in LaunchDarkly.AI.Server LaunchDarkly.AI.Server.ExtensionsAI LaunchDarkly.AI; do
+            for pkg in nupkgs/${id}.[0-9]*.nupkg; do
+              echo "publishing ${pkg}"
+              dotnet nuget push "${pkg}" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+            done
+          done
+          for pkg in nupkgs/*.snupkg; do
+            echo "publishing ${pkg}"
+            dotnet nuget push "${pkg}" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+          done
+
+  docs:
+    needs: ['publish']
+    permissions:
+      contents: write
+    uses: ./.github/workflows/publish-docs.yml

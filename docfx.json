@@ -1,0 +1,53 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "src": "./src",
+          "files": [
+            "LaunchDarkly.AI.Server/LaunchDarkly.AI.Server.csproj",
+            "LaunchDarkly.AI.Server.ExtensionsAI/LaunchDarkly.AI.Server.ExtensionsAI.csproj"
+          ]
+        }
+      ],
+      "dest": "api",
+      "properties": {
+        "Configuration": "Debug",
+        "TargetFramework": "net8.0"
+      }
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [
+          "api/**.yml",
+          "api/index.md"
+        ]
+      },
+      {
+        "files": [
+          "index.md",
+          "toc.yml"
+        ]
+      }
+    ],
+    "overwrite": [
+      {
+        "files": [
+          "docs-src/namespaces/**.md"
+        ]
+      }
+    ],
+    "output": "docs",
+    "template": [
+      "default"
+    ],
+    "globalMetadata": {
+      "_appName": "LaunchDarkly AI SDK for .NET",
+      "_appTitle": "LaunchDarkly AI SDK for .NET",
+      "_enableSearch": true,
+      "pdf": false
+    }
+  }
+}

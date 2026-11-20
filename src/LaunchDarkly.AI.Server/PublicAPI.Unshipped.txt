@@ -1,0 +1,364 @@
+#nullable enable
+const LaunchDarkly.AI.Server.HandlerModes.Agent = "agent" -> string!
+const LaunchDarkly.AI.Server.HandlerModes.Messages = "messages" -> string!
+const LaunchDarkly.AI.Server.MessageRoles.Assistant = "assistant" -> string!
+const LaunchDarkly.AI.Server.MessageRoles.System = "system" -> string!
+const LaunchDarkly.AI.Server.MessageRoles.User = "user" -> string!
+const LaunchDarkly.AI.Server.ProvidesFor.Wildcard = "*" -> string!
+LaunchDarkly.AI.Server.AiConfig
+LaunchDarkly.AI.Server.AiConfig.<Clone>$() -> LaunchDarkly.AI.Server.AiConfig!
+LaunchDarkly.AI.Server.AiConfig.AiConfig(LaunchDarkly.AI.Server.ModelConfig! model, LaunchDarkly.AI.Server.ProviderConfig! provider) -> void
+LaunchDarkly.AI.Server.AiConfig.Equals(LaunchDarkly.AI.Server.AiConfig? other) -> bool
+LaunchDarkly.AI.Server.AiConfig.EvaluationMetricKey.get -> string?
+LaunchDarkly.AI.Server.AiConfig.EvaluationMetricKey.init -> void
+LaunchDarkly.AI.Server.AiConfig.Instructions.get -> string?
+LaunchDarkly.AI.Server.AiConfig.Instructions.init -> void
+LaunchDarkly.AI.Server.AiConfig.JudgeConfiguration.get -> System.Text.Json.JsonElement?
+LaunchDarkly.AI.Server.AiConfig.JudgeConfiguration.init -> void
+LaunchDarkly.AI.Server.AiConfig.Key.get -> string!
+LaunchDarkly.AI.Server.AiConfig.Key.init -> void
+LaunchDarkly.AI.Server.AiConfig.Messages.get -> System.Collections.Generic.IReadOnlyList<LaunchDarkly.AI.Server.ConfigMessage!>?
+LaunchDarkly.AI.Server.AiConfig.Messages.init -> void
+LaunchDarkly.AI.Server.AiConfig.Model.get -> LaunchDarkly.AI.Server.ModelConfig!
+LaunchDarkly.AI.Server.AiConfig.Model.init -> void
+LaunchDarkly.AI.Server.AiConfig.OutputFormat.get -> System.Text.Json.JsonElement?
+LaunchDarkly.AI.Server.AiConfig.OutputFormat.init -> void
+LaunchDarkly.AI.Server.AiConfig.Provider.get -> LaunchDarkly.AI.Server.ProviderConfig!
+LaunchDarkly.AI.Server.AiConfig.Provider.init -> void
+LaunchDarkly.AI.Server.AiConfig.Tools.get -> System.Collections.Generic.IReadOnlyDictionary<string!, LaunchDarkly.AI.Server.ToolDefinition!>?
+LaunchDarkly.AI.Server.AiConfig.Tools.init -> void
+LaunchDarkly.AI.Server.AiConfigDisabledException
+LaunchDarkly.AI.Server.AiConfigDisabledException.ConfigKey.get -> string!
+LaunchDarkly.AI.Server.AiConfigNotFoundException
+LaunchDarkly.AI.Server.AiConfigNotFoundException.ConfigKey.get -> string!
+LaunchDarkly.AI.Server.Config
+LaunchDarkly.AI.Server.Config.InvokeAsync(string? input, LaunchDarkly.Sdk.Context context, System.Collections.Generic.IReadOnlyDictionary<string!, object?>? variables = null, System.Collections.Generic.IReadOnlyList<LaunchDarkly.AI.Server.HistoryMessage!>? history = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<LaunchDarkly.AI.Server.ProviderResponse!>!
+LaunchDarkly.AI.Server.ConfigArgs
+LaunchDarkly.AI.Server.ConfigArgs.ConfigArgs() -> void
+LaunchDarkly.AI.Server.ConfigArgs.Handler.get -> LaunchDarkly.AI.Server.ProviderHandler?
+LaunchDarkly.AI.Server.ConfigArgs.Handler.init -> void
+LaunchDarkly.AI.Server.ConfigArgs.Handlers.get -> System.Collections.Generic.IReadOnlyList<LaunchDarkly.AI.Server.ProviderHandler!>?
+LaunchDarkly.AI.Server.ConfigArgs.Handlers.init -> void
+LaunchDarkly.AI.Server.ConfigArgs.Key.get -> string!
+LaunchDarkly.AI.Server.ConfigArgs.Key.init -> void
+LaunchDarkly.AI.Server.ConfigArgs.Registry.get -> LaunchDarkly.AI.Server.Registry?
+LaunchDarkly.AI.Server.ConfigArgs.Registry.init -> void
+LaunchDarkly.AI.Server.ConfigArgs.ToolHandlers.get -> System.Collections.Generic.IReadOnlyDictionary<string!, LaunchDarkly.AI.Server.ToolHandler!>?
+LaunchDarkly.AI.Server.ConfigArgs.ToolHandlers.init -> void
+LaunchDarkly.AI.Server.ConfigMessage
+LaunchDarkly.AI.Server.ConfigMessage.<Clone>$() -> LaunchDarkly.AI.Server.ConfigMessage!
+LaunchDarkly.AI.Server.ConfigMessage.ConfigMessage(string! role, string! content) -> void
+LaunchDarkly.AI.Server.ConfigMessage.Content.get -> string!
+LaunchDarkly.AI.Server.ConfigMessage.Content.init -> void
+LaunchDarkly.AI.Server.ConfigMessage.Equals(LaunchDarkly.AI.Server.ConfigMessage? other) -> bool
+LaunchDarkly.AI.Server.ConfigMessage.Role.get -> string!
+LaunchDarkly.AI.Server.ConfigMessage.Role.init -> void
+LaunchDarkly.AI.Server.ConfigureLockedException
+LaunchDarkly.AI.Server.CreateHandlerOptions
+LaunchDarkly.AI.Server.CreateHandlerOptions.CaptureContent.get -> bool?
+LaunchDarkly.AI.Server.CreateHandlerOptions.CaptureContent.init -> void
+LaunchDarkly.AI.Server.CreateHandlerOptions.CreateHandlerOptions() -> void
+LaunchDarkly.AI.Server.CreateHandlerOptions.Providers.get -> System.Collections.Generic.IReadOnlyList<string!>?
+LaunchDarkly.AI.Server.CreateHandlerOptions.Providers.init -> void
+LaunchDarkly.AI.Server.FunctionTool
+LaunchDarkly.AI.Server.FunctionTool.FunctionTool(System.Func<System.Text.Json.JsonElement, System.Threading.CancellationToken, System.Threading.Tasks.Task<object?>!>! function) -> void
+LaunchDarkly.AI.Server.FunctionTool.InvokeAsync(System.Text.Json.JsonElement arguments, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<object?>!
+LaunchDarkly.AI.Server.HandlerModes
+LaunchDarkly.AI.Server.HandlerRequest
+LaunchDarkly.AI.Server.HandlerRequest.<Clone>$() -> LaunchDarkly.AI.Server.HandlerRequest!
+LaunchDarkly.AI.Server.HandlerRequest.Config.get -> LaunchDarkly.AI.Server.AiConfig!
+LaunchDarkly.AI.Server.HandlerRequest.Config.init -> void
+LaunchDarkly.AI.Server.HandlerRequest.Equals(LaunchDarkly.AI.Server.HandlerRequest? other) -> bool
+LaunchDarkly.AI.Server.HandlerRequest.HandlerRequest(LaunchDarkly.AI.Server.AiConfig! config) -> void
+LaunchDarkly.AI.Server.HandlerRequest.History.get -> System.Collections.Generic.IReadOnlyList<LaunchDarkly.AI.Server.HistoryMessage!>?
+LaunchDarkly.AI.Server.HandlerRequest.History.init -> void
+LaunchDarkly.AI.Server.HandlerRequest.ToolHandlers.get -> System.Collections.Generic.IReadOnlyDictionary<string!, LaunchDarkly.AI.Server.ToolHandler!>!
+LaunchDarkly.AI.Server.HandlerRequest.ToolHandlers.init -> void
+LaunchDarkly.AI.Server.HandlerRequest.UserInput.get -> string?
+LaunchDarkly.AI.Server.HandlerRequest.UserInput.init -> void
+LaunchDarkly.AI.Server.HandlerRequest.Variables.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>!
+LaunchDarkly.AI.Server.HandlerRequest.Variables.init -> void
+LaunchDarkly.AI.Server.HandlerResult
+LaunchDarkly.AI.Server.HandlerResult.<Clone>$() -> LaunchDarkly.AI.Server.HandlerResult!
+LaunchDarkly.AI.Server.HandlerResult.Equals(LaunchDarkly.AI.Server.HandlerResult? other) -> bool
+LaunchDarkly.AI.Server.HandlerResult.HandlerResult() -> void
+LaunchDarkly.AI.Server.HandlerResult.Output.get -> object?
+LaunchDarkly.AI.Server.HandlerResult.Output.init -> void
+LaunchDarkly.AI.Server.HandlerResult.Usage.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>?
+LaunchDarkly.AI.Server.HandlerResult.Usage.init -> void
+LaunchDarkly.AI.Server.HistoryMessage
+LaunchDarkly.AI.Server.HistoryMessage.<Clone>$() -> LaunchDarkly.AI.Server.HistoryMessage!
+LaunchDarkly.AI.Server.HistoryMessage.Content.get -> string!
+LaunchDarkly.AI.Server.HistoryMessage.Content.init -> void
+LaunchDarkly.AI.Server.HistoryMessage.Equals(LaunchDarkly.AI.Server.HistoryMessage? other) -> bool
+LaunchDarkly.AI.Server.HistoryMessage.HistoryMessage(string! role, string! content) -> void
+LaunchDarkly.AI.Server.HistoryMessage.Role.get -> string!
+LaunchDarkly.AI.Server.HistoryMessage.Role.init -> void
+LaunchDarkly.AI.Server.ILdAiClient
+LaunchDarkly.AI.Server.ILdAiClient.Config(LaunchDarkly.AI.Server.ConfigArgs! args) -> LaunchDarkly.AI.Server.Config!
+LaunchDarkly.AI.Server.ILdAiClient.InspectConfigAsync(string! key, LaunchDarkly.Sdk.Context context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<LaunchDarkly.AI.Server.InspectResult!>!
+LaunchDarkly.AI.Server.ILdAiClient.LdClient.get -> LaunchDarkly.Sdk.Server.Interfaces.ILdClient!
+LaunchDarkly.AI.Server.ILdAiClient.ShutdownAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+LaunchDarkly.AI.Server.InitOptions
+LaunchDarkly.AI.Server.InitOptions.BaseUri.get -> System.Uri?
+LaunchDarkly.AI.Server.InitOptions.BaseUri.init -> void
+LaunchDarkly.AI.Server.InitOptions.EventsUri.get -> System.Uri?
+LaunchDarkly.AI.Server.InitOptions.EventsUri.init -> void
+LaunchDarkly.AI.Server.InitOptions.InitOptions() -> void
+LaunchDarkly.AI.Server.InitOptions.SdkKey.get -> string?
+LaunchDarkly.AI.Server.InitOptions.SdkKey.init -> void
+LaunchDarkly.AI.Server.InitOptions.StartWaitTime.get -> System.TimeSpan?
+LaunchDarkly.AI.Server.InitOptions.StartWaitTime.init -> void
+LaunchDarkly.AI.Server.InitOptions.StreamUri.get -> System.Uri?
+LaunchDarkly.AI.Server.InitOptions.StreamUri.init -> void
+LaunchDarkly.AI.Server.InputTokenDetails
+LaunchDarkly.AI.Server.InputTokenDetails.<Clone>$() -> LaunchDarkly.AI.Server.InputTokenDetails!
+LaunchDarkly.AI.Server.InputTokenDetails.CacheCreation.get -> long
+LaunchDarkly.AI.Server.InputTokenDetails.CacheCreation.init -> void
+LaunchDarkly.AI.Server.InputTokenDetails.CacheRead.get -> long
+LaunchDarkly.AI.Server.InputTokenDetails.CacheRead.init -> void
+LaunchDarkly.AI.Server.InputTokenDetails.Equals(LaunchDarkly.AI.Server.InputTokenDetails? other) -> bool
+LaunchDarkly.AI.Server.InputTokenDetails.InputTokenDetails() -> void
+LaunchDarkly.AI.Server.InputTokenDetails.Uncached.get -> long
+LaunchDarkly.AI.Server.InputTokenDetails.Uncached.init -> void
+LaunchDarkly.AI.Server.InspectResult
+LaunchDarkly.AI.Server.InspectResult.<Clone>$() -> LaunchDarkly.AI.Server.InspectResult!
+LaunchDarkly.AI.Server.InspectResult.Config.get -> LaunchDarkly.AI.Server.AiConfig?
+LaunchDarkly.AI.Server.InspectResult.Config.init -> void
+LaunchDarkly.AI.Server.InspectResult.Enabled.get -> bool
+LaunchDarkly.AI.Server.InspectResult.Enabled.init -> void
+LaunchDarkly.AI.Server.InspectResult.Equals(LaunchDarkly.AI.Server.InspectResult? other) -> bool
+LaunchDarkly.AI.Server.InspectResult.Error.get -> System.Exception?
+LaunchDarkly.AI.Server.InspectResult.Error.init -> void
+LaunchDarkly.AI.Server.InspectResult.InspectResult() -> void
+LaunchDarkly.AI.Server.InspectResult.Meta.get -> LaunchDarkly.AI.Server.VariationMeta?
+LaunchDarkly.AI.Server.InspectResult.Meta.init -> void
+LaunchDarkly.AI.Server.LdAi
+LaunchDarkly.AI.Server.LdAiException
+LaunchDarkly.AI.Server.LdAiException.LdAiException(string! message) -> void
+LaunchDarkly.AI.Server.LdAiException.LdAiException(string! message, System.Exception? innerException) -> void
+LaunchDarkly.AI.Server.MessageRoles
+LaunchDarkly.AI.Server.ModelConfig
+LaunchDarkly.AI.Server.ModelConfig.<Clone>$() -> LaunchDarkly.AI.Server.ModelConfig!
+LaunchDarkly.AI.Server.ModelConfig.Custom.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Text.Json.JsonElement>?
+LaunchDarkly.AI.Server.ModelConfig.Custom.init -> void
+LaunchDarkly.AI.Server.ModelConfig.Equals(LaunchDarkly.AI.Server.ModelConfig? other) -> bool
+LaunchDarkly.AI.Server.ModelConfig.ModelConfig(string! name) -> void
+LaunchDarkly.AI.Server.ModelConfig.Name.get -> string!
+LaunchDarkly.AI.Server.ModelConfig.Name.init -> void
+LaunchDarkly.AI.Server.ModelConfig.Parameters.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Text.Json.JsonElement>?
+LaunchDarkly.AI.Server.ModelConfig.Parameters.init -> void
+LaunchDarkly.AI.Server.ModelConfig.Region.get -> string?
+LaunchDarkly.AI.Server.ModelConfig.Region.init -> void
+LaunchDarkly.AI.Server.NativeTool
+LaunchDarkly.AI.Server.NativeTool.NativeTool(string! toolName) -> void
+LaunchDarkly.AI.Server.NativeTool.ToolName.get -> string!
+LaunchDarkly.AI.Server.NoHandlerException
+LaunchDarkly.AI.Server.ProviderConfig
+LaunchDarkly.AI.Server.ProviderConfig.<Clone>$() -> LaunchDarkly.AI.Server.ProviderConfig!
+LaunchDarkly.AI.Server.ProviderConfig.Equals(LaunchDarkly.AI.Server.ProviderConfig? other) -> bool
+LaunchDarkly.AI.Server.ProviderConfig.Name.get -> string!
+LaunchDarkly.AI.Server.ProviderConfig.Name.init -> void
+LaunchDarkly.AI.Server.ProviderConfig.ProviderConfig(string! name) -> void
+LaunchDarkly.AI.Server.ProviderHandler
+LaunchDarkly.AI.Server.ProviderHandler.CaptureContent.get -> bool?
+LaunchDarkly.AI.Server.ProviderHandler.CaptureContent.set -> void
+LaunchDarkly.AI.Server.ProviderHandler.EffectiveCaptureContent.get -> bool
+LaunchDarkly.AI.Server.ProviderHandler.InvokeAsync(LaunchDarkly.AI.Server.HandlerRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<LaunchDarkly.AI.Server.HandlerResult!>!
+LaunchDarkly.AI.Server.ProviderHandler.Providers.get -> System.Collections.Generic.IReadOnlyList<string!>?
+LaunchDarkly.AI.Server.ProviderHandler.ProvidesFor.get -> LaunchDarkly.AI.Server.ProvidesFor!
+LaunchDarkly.AI.Server.ProviderResponse
+LaunchDarkly.AI.Server.ProviderResponse.<Clone>$() -> LaunchDarkly.AI.Server.ProviderResponse!
+LaunchDarkly.AI.Server.ProviderResponse.Equals(LaunchDarkly.AI.Server.ProviderResponse? other) -> bool
+LaunchDarkly.AI.Server.ProviderResponse.ProviderResponse() -> void
+LaunchDarkly.AI.Server.ProviderResponse.Response.get -> object?
+LaunchDarkly.AI.Server.ProviderResponse.Response.init -> void
+LaunchDarkly.AI.Server.ProviderResponse.TrackData.get -> LaunchDarkly.AI.Server.TrackData!
+LaunchDarkly.AI.Server.ProviderResponse.TrackData.init -> void
+LaunchDarkly.AI.Server.ProviderResponse.Usage.get -> LaunchDarkly.AI.Server.TokenUsage!
+LaunchDarkly.AI.Server.ProviderResponse.Usage.init -> void
+LaunchDarkly.AI.Server.ProvidesFor
+LaunchDarkly.AI.Server.ProvidesFor.<Clone>$() -> LaunchDarkly.AI.Server.ProvidesFor!
+LaunchDarkly.AI.Server.ProvidesFor.Equals(LaunchDarkly.AI.Server.ProvidesFor? other) -> bool
+LaunchDarkly.AI.Server.ProvidesFor.Mode.get -> string!
+LaunchDarkly.AI.Server.ProvidesFor.Mode.init -> void
+LaunchDarkly.AI.Server.ProvidesFor.Provider.get -> string!
+LaunchDarkly.AI.Server.ProvidesFor.Provider.init -> void
+LaunchDarkly.AI.Server.ProvidesFor.ProvidesFor(string! provider, string! mode) -> void
+LaunchDarkly.AI.Server.Registry
+LaunchDarkly.AI.Server.Registry.Handlers.get -> System.Collections.Generic.IReadOnlyList<LaunchDarkly.AI.Server.ProviderHandler!>!
+LaunchDarkly.AI.Server.Registry.Register(System.Collections.Generic.IEnumerable<LaunchDarkly.AI.Server.ProviderHandler!>? handlers = null, System.Collections.Generic.IReadOnlyDictionary<string!, LaunchDarkly.AI.Server.ToolHandler!>? tools = null) -> void
+LaunchDarkly.AI.Server.Registry.Registry() -> void
+LaunchDarkly.AI.Server.Registry.Registry(System.Collections.Generic.IEnumerable<LaunchDarkly.AI.Server.ProviderHandler!>? handlers, System.Collections.Generic.IReadOnlyDictionary<string!, LaunchDarkly.AI.Server.ToolHandler!>? tools) -> void
+LaunchDarkly.AI.Server.Registry.Tools.get -> System.Collections.Generic.IReadOnlyDictionary<string!, LaunchDarkly.AI.Server.ToolHandler!>!
+LaunchDarkly.AI.Server.SdkOptions
+LaunchDarkly.AI.Server.SdkOptions.<Clone>$() -> LaunchDarkly.AI.Server.SdkOptions!
+LaunchDarkly.AI.Server.SdkOptions.CaptureContent.get -> bool
+LaunchDarkly.AI.Server.SdkOptions.CaptureContent.init -> void
+LaunchDarkly.AI.Server.SdkOptions.Equals(LaunchDarkly.AI.Server.SdkOptions? other) -> bool
+LaunchDarkly.AI.Server.SdkOptions.SdkOptions() -> void
+LaunchDarkly.AI.Server.TokenUsage
+LaunchDarkly.AI.Server.TokenUsage.<Clone>$() -> LaunchDarkly.AI.Server.TokenUsage!
+LaunchDarkly.AI.Server.TokenUsage.Equals(LaunchDarkly.AI.Server.TokenUsage? other) -> bool
+LaunchDarkly.AI.Server.TokenUsage.Input.get -> long
+LaunchDarkly.AI.Server.TokenUsage.Input.init -> void
+LaunchDarkly.AI.Server.TokenUsage.InputDetails.get -> LaunchDarkly.AI.Server.InputTokenDetails?
+LaunchDarkly.AI.Server.TokenUsage.InputDetails.init -> void
+LaunchDarkly.AI.Server.TokenUsage.Output.get -> long
+LaunchDarkly.AI.Server.TokenUsage.Output.init -> void
+LaunchDarkly.AI.Server.TokenUsage.TokenUsage() -> void
+LaunchDarkly.AI.Server.TokenUsage.Total.get -> long
+LaunchDarkly.AI.Server.TokenUsage.Total.init -> void
+LaunchDarkly.AI.Server.ToolDefinition
+LaunchDarkly.AI.Server.ToolDefinition.<Clone>$() -> LaunchDarkly.AI.Server.ToolDefinition!
+LaunchDarkly.AI.Server.ToolDefinition.CustomParameters.get -> System.Text.Json.JsonElement?
+LaunchDarkly.AI.Server.ToolDefinition.CustomParameters.init -> void
+LaunchDarkly.AI.Server.ToolDefinition.Description.get -> string?
+LaunchDarkly.AI.Server.ToolDefinition.Description.init -> void
+LaunchDarkly.AI.Server.ToolDefinition.Equals(LaunchDarkly.AI.Server.ToolDefinition? other) -> bool
+LaunchDarkly.AI.Server.ToolDefinition.Name.get -> string!
+LaunchDarkly.AI.Server.ToolDefinition.Name.init -> void
+LaunchDarkly.AI.Server.ToolDefinition.Parameters.get -> System.Text.Json.JsonElement
+LaunchDarkly.AI.Server.ToolDefinition.Parameters.init -> void
+LaunchDarkly.AI.Server.ToolDefinition.ToolDefinition(string! name, System.Text.Json.JsonElement parameters) -> void
+LaunchDarkly.AI.Server.ToolDefinition.Type.get -> string!
+LaunchDarkly.AI.Server.ToolDefinition.Type.init -> void
+LaunchDarkly.AI.Server.ToolHandler
+LaunchDarkly.AI.Server.TrackData
+LaunchDarkly.AI.Server.TrackData.<Clone>$() -> LaunchDarkly.AI.Server.TrackData!
+LaunchDarkly.AI.Server.TrackData.ConfigKey.get -> string!
+LaunchDarkly.AI.Server.TrackData.ConfigKey.init -> void
+LaunchDarkly.AI.Server.TrackData.Equals(LaunchDarkly.AI.Server.TrackData? other) -> bool
+LaunchDarkly.AI.Server.TrackData.GraphKey.get -> string?
+LaunchDarkly.AI.Server.TrackData.GraphKey.init -> void
+LaunchDarkly.AI.Server.TrackData.ModelKey.get -> string?
+LaunchDarkly.AI.Server.TrackData.ModelKey.init -> void
+LaunchDarkly.AI.Server.TrackData.ModelName.get -> string!
+LaunchDarkly.AI.Server.TrackData.ModelName.init -> void
+LaunchDarkly.AI.Server.TrackData.ModelVersion.get -> long?
+LaunchDarkly.AI.Server.TrackData.ModelVersion.init -> void
+LaunchDarkly.AI.Server.TrackData.ProviderName.get -> string!
+LaunchDarkly.AI.Server.TrackData.ProviderName.init -> void
+LaunchDarkly.AI.Server.TrackData.RunId.get -> string!
+LaunchDarkly.AI.Server.TrackData.RunId.init -> void
+LaunchDarkly.AI.Server.TrackData.ToolKey.get -> string?
+LaunchDarkly.AI.Server.TrackData.ToolKey.init -> void
+LaunchDarkly.AI.Server.TrackData.TrackData() -> void
+LaunchDarkly.AI.Server.TrackData.VariationKey.get -> string!
+LaunchDarkly.AI.Server.TrackData.VariationKey.init -> void
+LaunchDarkly.AI.Server.TrackData.Version.get -> int
+LaunchDarkly.AI.Server.TrackData.Version.init -> void
+LaunchDarkly.AI.Server.VariationMeta
+LaunchDarkly.AI.Server.VariationMeta.<Clone>$() -> LaunchDarkly.AI.Server.VariationMeta!
+LaunchDarkly.AI.Server.VariationMeta.Enabled.get -> bool
+LaunchDarkly.AI.Server.VariationMeta.Enabled.init -> void
+LaunchDarkly.AI.Server.VariationMeta.Equals(LaunchDarkly.AI.Server.VariationMeta? other) -> bool
+LaunchDarkly.AI.Server.VariationMeta.Mode.get -> string?
+LaunchDarkly.AI.Server.VariationMeta.Mode.init -> void
+LaunchDarkly.AI.Server.VariationMeta.ModelKey.get -> string?
+LaunchDarkly.AI.Server.VariationMeta.ModelKey.init -> void
+LaunchDarkly.AI.Server.VariationMeta.ModelVersion.get -> long?
+LaunchDarkly.AI.Server.VariationMeta.ModelVersion.init -> void
+LaunchDarkly.AI.Server.VariationMeta.VariationKey.get -> string?
+LaunchDarkly.AI.Server.VariationMeta.VariationKey.init -> void
+LaunchDarkly.AI.Server.VariationMeta.VariationMeta() -> void
+LaunchDarkly.AI.Server.VariationMeta.Version.get -> int?
+LaunchDarkly.AI.Server.VariationMeta.Version.init -> void
+override LaunchDarkly.AI.Server.AiConfig.Equals(object? obj) -> bool
+override LaunchDarkly.AI.Server.AiConfig.GetHashCode() -> int
+override LaunchDarkly.AI.Server.AiConfig.ToString() -> string!
+override LaunchDarkly.AI.Server.ConfigMessage.Equals(object? obj) -> bool
+override LaunchDarkly.AI.Server.ConfigMessage.GetHashCode() -> int
+override LaunchDarkly.AI.Server.ConfigMessage.ToString() -> string!
+override LaunchDarkly.AI.Server.HandlerRequest.Equals(object? obj) -> bool
+override LaunchDarkly.AI.Server.HandlerRequest.GetHashCode() -> int
+override LaunchDarkly.AI.Server.HandlerRequest.ToString() -> string!
+override LaunchDarkly.AI.Server.HandlerResult.Equals(object? obj) -> bool
+override LaunchDarkly.AI.Server.HandlerResult.GetHashCode() -> int
+override LaunchDarkly.AI.Server.HandlerResult.ToString() -> string!
+override LaunchDarkly.AI.Server.HistoryMessage.Equals(object? obj) -> bool
+override LaunchDarkly.AI.Server.HistoryMessage.GetHashCode() -> int
+override LaunchDarkly.AI.Server.HistoryMessage.ToString() -> string!
+override LaunchDarkly.AI.Server.InputTokenDetails.Equals(object? obj) -> bool
+override LaunchDarkly.AI.Server.InputTokenDetails.GetHashCode() -> int
+override LaunchDarkly.AI.Server.InputTokenDetails.ToString() -> string!
+override LaunchDarkly.AI.Server.InspectResult.Equals(object? obj) -> bool
+override LaunchDarkly.AI.Server.InspectResult.GetHashCode() -> int
+override LaunchDarkly.AI.Server.InspectResult.ToString() -> string!
+override LaunchDarkly.AI.Server.ModelConfig.Equals(object? obj) -> bool
+override LaunchDarkly.AI.Server.ModelConfig.GetHashCode() -> int
+override LaunchDarkly.AI.Server.ModelConfig.ToString() -> string!
+override LaunchDarkly.AI.Server.ProviderConfig.Equals(object? obj) -> bool
+override LaunchDarkly.AI.Server.ProviderConfig.GetHashCode() -> int
+override LaunchDarkly.AI.Server.ProviderConfig.ToString() -> string!
+override LaunchDarkly.AI.Server.ProviderResponse.Equals(object? obj) -> bool
+override LaunchDarkly.AI.Server.ProviderResponse.GetHashCode() -> int
+override LaunchDarkly.AI.Server.ProviderResponse.ToString() -> string!
+override LaunchDarkly.AI.Server.ProvidesFor.Equals(object? obj) -> bool
+override LaunchDarkly.AI.Server.ProvidesFor.GetHashCode() -> int
+override LaunchDarkly.AI.Server.ProvidesFor.ToString() -> string!
+override LaunchDarkly.AI.Server.SdkOptions.Equals(object? obj) -> bool
+override LaunchDarkly.AI.Server.SdkOptions.GetHashCode() -> int
+override LaunchDarkly.AI.Server.SdkOptions.ToString() -> string!
+override LaunchDarkly.AI.Server.TokenUsage.Equals(object? obj) -> bool
+override LaunchDarkly.AI.Server.TokenUsage.GetHashCode() -> int
+override LaunchDarkly.AI.Server.TokenUsage.ToString() -> string!
+override LaunchDarkly.AI.Server.ToolDefinition.Equals(object? obj) -> bool
+override LaunchDarkly.AI.Server.ToolDefinition.GetHashCode() -> int
+override LaunchDarkly.AI.Server.ToolDefinition.ToString() -> string!
+override LaunchDarkly.AI.Server.TrackData.Equals(object? obj) -> bool
+override LaunchDarkly.AI.Server.TrackData.GetHashCode() -> int
+override LaunchDarkly.AI.Server.TrackData.ToString() -> string!
+override LaunchDarkly.AI.Server.VariationMeta.Equals(object? obj) -> bool
+override LaunchDarkly.AI.Server.VariationMeta.GetHashCode() -> int
+override LaunchDarkly.AI.Server.VariationMeta.ToString() -> string!
+static LaunchDarkly.AI.Server.AiConfig.operator !=(LaunchDarkly.AI.Server.AiConfig? left, LaunchDarkly.AI.Server.AiConfig? right) -> bool
+static LaunchDarkly.AI.Server.AiConfig.operator ==(LaunchDarkly.AI.Server.AiConfig? left, LaunchDarkly.AI.Server.AiConfig? right) -> bool
+static LaunchDarkly.AI.Server.ConfigMessage.operator !=(LaunchDarkly.AI.Server.ConfigMessage? left, LaunchDarkly.AI.Server.ConfigMessage? right) -> bool
+static LaunchDarkly.AI.Server.ConfigMessage.operator ==(LaunchDarkly.AI.Server.ConfigMessage? left, LaunchDarkly.AI.Server.ConfigMessage? right) -> bool
+static LaunchDarkly.AI.Server.HandlerRequest.operator !=(LaunchDarkly.AI.Server.HandlerRequest? left, LaunchDarkly.AI.Server.HandlerRequest? right) -> bool
+static LaunchDarkly.AI.Server.HandlerRequest.operator ==(LaunchDarkly.AI.Server.HandlerRequest? left, LaunchDarkly.AI.Server.HandlerRequest? right) -> bool
+static LaunchDarkly.AI.Server.HandlerResult.operator !=(LaunchDarkly.AI.Server.HandlerResult? left, LaunchDarkly.AI.Server.HandlerResult? right) -> bool
+static LaunchDarkly.AI.Server.HandlerResult.operator ==(LaunchDarkly.AI.Server.HandlerResult? left, LaunchDarkly.AI.Server.HandlerResult? right) -> bool
+static LaunchDarkly.AI.Server.HistoryMessage.operator !=(LaunchDarkly.AI.Server.HistoryMessage? left, LaunchDarkly.AI.Server.HistoryMessage? right) -> bool
+static LaunchDarkly.AI.Server.HistoryMessage.operator ==(LaunchDarkly.AI.Server.HistoryMessage? left, LaunchDarkly.AI.Server.HistoryMessage? right) -> bool
+static LaunchDarkly.AI.Server.InputTokenDetails.operator !=(LaunchDarkly.AI.Server.InputTokenDetails? left, LaunchDarkly.AI.Server.InputTokenDetails? right) -> bool
+static LaunchDarkly.AI.Server.InputTokenDetails.operator ==(LaunchDarkly.AI.Server.InputTokenDetails? left, LaunchDarkly.AI.Server.InputTokenDetails? right) -> bool
+static LaunchDarkly.AI.Server.InspectResult.operator !=(LaunchDarkly.AI.Server.InspectResult? left, LaunchDarkly.AI.Server.InspectResult? right) -> bool
+static LaunchDarkly.AI.Server.InspectResult.operator ==(LaunchDarkly.AI.Server.InspectResult? left, LaunchDarkly.AI.Server.InspectResult? right) -> bool
+static LaunchDarkly.AI.Server.LdAi.Config(LaunchDarkly.AI.Server.ConfigArgs! args) -> LaunchDarkly.AI.Server.Config!
+static LaunchDarkly.AI.Server.LdAi.Configure(LaunchDarkly.AI.Server.SdkOptions! options) -> void
+static LaunchDarkly.AI.Server.LdAi.CreateHandler(LaunchDarkly.AI.Server.ProvidesFor! providesFor, LaunchDarkly.AI.Server.ProviderHandler! handler) -> LaunchDarkly.AI.Server.ProviderHandler!
+static LaunchDarkly.AI.Server.LdAi.CreateHandler(LaunchDarkly.AI.Server.ProvidesFor! providesFor, LaunchDarkly.AI.Server.ProviderHandler! handler, LaunchDarkly.AI.Server.CreateHandlerOptions! options) -> LaunchDarkly.AI.Server.ProviderHandler!
+static LaunchDarkly.AI.Server.LdAi.CreateHandler(LaunchDarkly.AI.Server.ProvidesFor! providesFor, System.Func<LaunchDarkly.AI.Server.HandlerRequest!, System.Threading.CancellationToken, System.Threading.Tasks.Task<LaunchDarkly.AI.Server.HandlerResult!>!>! handler) -> LaunchDarkly.AI.Server.ProviderHandler!
+static LaunchDarkly.AI.Server.LdAi.CreateHandler(LaunchDarkly.AI.Server.ProvidesFor! providesFor, System.Func<LaunchDarkly.AI.Server.HandlerRequest!, System.Threading.CancellationToken, System.Threading.Tasks.Task<LaunchDarkly.AI.Server.HandlerResult!>!>! handler, LaunchDarkly.AI.Server.CreateHandlerOptions! options) -> LaunchDarkly.AI.Server.ProviderHandler!
+static LaunchDarkly.AI.Server.LdAi.GetClient() -> LaunchDarkly.AI.Server.ILdAiClient!
+static LaunchDarkly.AI.Server.LdAi.InitClientAsync() -> System.Threading.Tasks.Task<LaunchDarkly.AI.Server.ILdAiClient!>!
+static LaunchDarkly.AI.Server.LdAi.InitClientAsync(LaunchDarkly.AI.Server.InitOptions! options) -> System.Threading.Tasks.Task<LaunchDarkly.AI.Server.ILdAiClient!>!
+static LaunchDarkly.AI.Server.LdAi.InitClientAsync(LaunchDarkly.AI.Server.InitOptions! options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<LaunchDarkly.AI.Server.ILdAiClient!>!
+static LaunchDarkly.AI.Server.LdAi.InitClientAsync(LaunchDarkly.Sdk.Server.Interfaces.ILdClient! client) -> System.Threading.Tasks.Task<LaunchDarkly.AI.Server.ILdAiClient!>!
+static LaunchDarkly.AI.Server.LdAi.InitClientAsync(LaunchDarkly.Sdk.Server.Interfaces.ILdClient! client, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<LaunchDarkly.AI.Server.ILdAiClient!>!
+static LaunchDarkly.AI.Server.LdAi.InspectConfigAsync(string! key, LaunchDarkly.Sdk.Context context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<LaunchDarkly.AI.Server.InspectResult!>!
+static LaunchDarkly.AI.Server.LdAi.ParseTemplate(string! template, System.Collections.Generic.IReadOnlyDictionary<string!, object?>? variables) -> string!
+static LaunchDarkly.AI.Server.LdAi.RegisterAiSdkPackage(string! name, string! version) -> void
+static LaunchDarkly.AI.Server.LdAi.ReportUsage(string! helper, string? packageName = null, string? packageVersion = null) -> void
+static LaunchDarkly.AI.Server.LdAi.ShutdownAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static LaunchDarkly.AI.Server.ModelConfig.operator !=(LaunchDarkly.AI.Server.ModelConfig? left, LaunchDarkly.AI.Server.ModelConfig? right) -> bool
+static LaunchDarkly.AI.Server.ModelConfig.operator ==(LaunchDarkly.AI.Server.ModelConfig? left, LaunchDarkly.AI.Server.ModelConfig? right) -> bool
+static LaunchDarkly.AI.Server.ProviderConfig.operator !=(LaunchDarkly.AI.Server.ProviderConfig? left, LaunchDarkly.AI.Server.ProviderConfig? right) -> bool
+static LaunchDarkly.AI.Server.ProviderConfig.operator ==(LaunchDarkly.AI.Server.ProviderConfig? left, LaunchDarkly.AI.Server.ProviderConfig? right) -> bool
+static LaunchDarkly.AI.Server.ProviderResponse.operator !=(LaunchDarkly.AI.Server.ProviderResponse? left, LaunchDarkly.AI.Server.ProviderResponse? right) -> bool
+static LaunchDarkly.AI.Server.ProviderResponse.operator ==(LaunchDarkly.AI.Server.ProviderResponse? left, LaunchDarkly.AI.Server.ProviderResponse? right) -> bool
+static LaunchDarkly.AI.Server.ProvidesFor.operator !=(LaunchDarkly.AI.Server.ProvidesFor? left, LaunchDarkly.AI.Server.ProvidesFor? right) -> bool
+static LaunchDarkly.AI.Server.ProvidesFor.operator ==(LaunchDarkly.AI.Server.ProvidesFor? left, LaunchDarkly.AI.Server.ProvidesFor? right) -> bool
+static LaunchDarkly.AI.Server.Registry.Compose(LaunchDarkly.AI.Server.Registry! a, LaunchDarkly.AI.Server.Registry! b) -> LaunchDarkly.AI.Server.Registry!
+static LaunchDarkly.AI.Server.SdkOptions.operator !=(LaunchDarkly.AI.Server.SdkOptions? left, LaunchDarkly.AI.Server.SdkOptions? right) -> bool
+static LaunchDarkly.AI.Server.SdkOptions.operator ==(LaunchDarkly.AI.Server.SdkOptions? left, LaunchDarkly.AI.Server.SdkOptions? right) -> bool
+static LaunchDarkly.AI.Server.TokenUsage.operator !=(LaunchDarkly.AI.Server.TokenUsage? left, LaunchDarkly.AI.Server.TokenUsage? right) -> bool
+static LaunchDarkly.AI.Server.TokenUsage.operator ==(LaunchDarkly.AI.Server.TokenUsage? left, LaunchDarkly.AI.Server.TokenUsage? right) -> bool
+static LaunchDarkly.AI.Server.ToolDefinition.operator !=(LaunchDarkly.AI.Server.ToolDefinition? left, LaunchDarkly.AI.Server.ToolDefinition? right) -> bool
+static LaunchDarkly.AI.Server.ToolDefinition.operator ==(LaunchDarkly.AI.Server.ToolDefinition? left, LaunchDarkly.AI.Server.ToolDefinition? right) -> bool
+static LaunchDarkly.AI.Server.TrackData.operator !=(LaunchDarkly.AI.Server.TrackData? left, LaunchDarkly.AI.Server.TrackData? right) -> bool
+static LaunchDarkly.AI.Server.TrackData.operator ==(LaunchDarkly.AI.Server.TrackData? left, LaunchDarkly.AI.Server.TrackData? right) -> bool
+static LaunchDarkly.AI.Server.VariationMeta.operator !=(LaunchDarkly.AI.Server.VariationMeta? left, LaunchDarkly.AI.Server.VariationMeta? right) -> bool
+static LaunchDarkly.AI.Server.VariationMeta.operator ==(LaunchDarkly.AI.Server.VariationMeta? left, LaunchDarkly.AI.Server.VariationMeta? right) -> bool

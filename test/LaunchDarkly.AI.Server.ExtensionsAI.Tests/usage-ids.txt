@@ -1,0 +1,4 @@
+# Usage table: one line per public member that reports a helper-usage event, in the
+# form "Type.Member  usage=<id>[,<id>]". The usage tests read it as theory data.
+ChatClientHandler.Create  usage=extensionsai-messages.createChatClientMessagesHandler
+ChatClientMessages.InvokeAsync  usage=extensionsai-messages.chatClientMessages

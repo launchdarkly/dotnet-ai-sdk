@@ -1,0 +1,33 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+artifacts/
+nupkgs/
+*.nupkg
+*.snupkg
+TestResults/
+# Responses the examples write
+output/
+*.trx
+*.coverage
+coverage*.xml
+
+# Strong-name and signing keys are never committed; CI fetches them at release time.
+*.snk
+*.p12
+*.pfx
+
+# docfx output
+/api/
+/docs/
+
+# IDEs and OS files
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userprefs
+*.swp
+.DS_Store
+Thumbs.db

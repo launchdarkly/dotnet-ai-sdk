@@ -1,0 +1,387 @@
+#!/usr/bin/env bash
+# Self-test of the public API checks, against a fixture repository instead of the real
+# packages. The fixture is a git repository in a temporary folder with one small library
+# (Fixture.Api), its PublicAPI files, and copies of this repository's Makefile,
+# scripts/api-compat.sh, scripts/api-update.sh, dotnet tool manifest and global.json, so
+# it runs the same commands CI runs:
+#
+#   check 1, the report is current: `make build` (RS0016/RS0017 as errors) and
+#            `make api-check`, with `make api-update` as the update command;
+#   check 2, a breaking change is declared: scripts/api-compat.sh against the fixture's
+#            base commit, with PR_TITLE standing in for the pull request title and
+#            API_COMPATIBLE=true for the api-compatible label.
+#
+# Each case starts from the base commit, changes the fixture, runs a check and compares
+# the outcome with the expected one. The script prints one "ok" or "not ok" line per case
+# and fails if any case is "not ok".
+#
+# Usage: scripts/api-check-selftest.sh      (make api-check-selftest)
+set -uo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+DOTNET="${DOTNET:-dotnet}"
+export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+unset API_COMPATIBLE PR_TITLE GITHUB_ACTIONS
+
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/api-check-selftest.XXXXXX")"
+FIX="$WORK/repo"
+LIB="$FIX/src/Fixture.Api"
+LOG="$WORK/out.log"
+cleanup() {
+  chmod -R u+rw "$WORK" 2>/dev/null || true
+  rm -rf "$WORK"
+}
+trap cleanup EXIT
+
+passed=0
+failed=()
+ok() { echo "ok - $1"; passed=$((passed + 1)); }
+not_ok() { # <case> <reason>
+  echo "not ok - $1: $2"
+  sed 's/^/    | /' "$LOG" | tail -n 25
+  failed+=("$1")
+}
+
+# Runs a command in the fixture, with its output in $LOG; returns its exit status.
+run() { (cd "$FIX" && "$@") >"$LOG" 2>&1; }
+
+# Replaces one exact piece of text in the fixture's Api.cs; fails the case if absent.
+mutate() { # <old> <new>
+  python3 -I - "$LIB/Api.cs" "$1" "$2" <<'PY'
+import sys
+path, old, new = sys.argv[1:4]
+text = open(path, encoding="utf-8").read()
+if text.count(old) != 1:
+    sys.exit(f"fixture text not found exactly once: {old!r}")
+open(path, "w", encoding="utf-8").write(text.replace(old, new))
+PY
+}
+
+# Rewrites PublicAPI.Unshipped.txt from the code, as a developer would after a change, so
+# that check 1 passes and only check 2 is under test. Starting from an empty file means a
+# removed symbol cannot survive (the RS0017 fix is not applied by dotnet format).
+update_report() {
+  printf '#nullable enable\n' >"$LIB/PublicAPI.Unshipped.txt"
+  (cd "$FIX" && "$DOTNET" format analyzers LaunchDarkly.AI.Server.sln --diagnostics RS0016 --severity hidden) >/dev/null 2>&1 || true
+}
+
+reset_fixture() {
+  chmod -R u+rw "$LIB" 2>/dev/null || true
+  git -C "$FIX" reset -q --hard base
+  git -C "$FIX" clean -qfdx -e bin -e obj
+}
+
+# ---- The fixture --------------------------------------------------------------------
+
+mkdir -p "$LIB" "$FIX/scripts" "$FIX/.config"
+cp "$ROOT/Makefile" "$ROOT/global.json" "$FIX/"
+cp "$ROOT/scripts/api-compat.sh" "$ROOT/scripts/api-update.sh" "$ROOT/scripts/required-members.cs" "$FIX/scripts/"
+cp "$ROOT/.config/dotnet-tools.json" "$FIX/.config/"
+analyzers_version="$(python3 -I - "$ROOT/Directory.Packages.props" <<'PY'
+import sys, xml.etree.ElementTree as ET
+for item in ET.parse(sys.argv[1]).getroot().iter("PackageVersion"):
+    if item.get("Include") == "Microsoft.CodeAnalysis.PublicApiAnalyzers":
+        print(item.get("Version"))
+PY
+)"
+cat >"$LIB/Fixture.Api.csproj" <<EOF
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsPackable>true</IsPackable>
+    <Version>0.1.0</Version>
+    <Authors>fixture</Authors>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="$analyzers_version" PrivateAssets="all" />
+  </ItemGroup>
+</Project>
+EOF
+cat >"$LIB/Api.cs" <<'EOF'
+using System.Collections.Generic;
+
+namespace Fixture.Api
+{
+    public static class Calc
+    {
+        public static int Add(int a, int b) => a + b;
+        public static int Sub(int a, int b) => a - b;
+        public static int Drop(int x, int y) => x + y;
+        public static string Move(string first, int second) => first + second;
+        public static int Twice(int x) => 2 * x;
+        public static int Scale(int x, int factor = 2) => x * factor;
+        public static string Describe(object value) => value.ToString() ?? "";
+        public static string Label(string text) => text;
+        public static string Greet(string name, string greeting = "Hello") => greeting + " " + name;
+        public static string Echo(string text) => text;
+        public static int Pair(KeyValuePair<int, string> pair = default(KeyValuePair<int, string>), int count = 1) => count;
+        public static int Entry(KeyValuePair<int, string> entry = default(KeyValuePair<int, string>)) => 0;
+    }
+
+    public class Widget
+    {
+        public string Name { get; init; } = "";
+
+        public int Size { get; set; }
+    }
+
+    public struct Point
+    {
+        public int X { get; set; }
+    }
+}
+EOF
+printf '#nullable enable\n' >"$LIB/PublicAPI.Shipped.txt"
+printf '#nullable enable\n' >"$LIB/PublicAPI.Unshipped.txt"
+printf 'bin/\nobj/\n' >"$FIX/.gitignore"
+(
+  cd "$FIX" &&
+    git init -q -b main &&
+    "$DOTNET" new sln -n LaunchDarkly.AI.Server --format sln -o . &&
+    "$DOTNET" sln LaunchDarkly.AI.Server.sln add src/Fixture.Api/Fixture.Api.csproj
+) >"$LOG" 2>&1 || { cat "$LOG"; echo "api-check-selftest: could not create the fixture"; exit 2; }
+update_report
+git -C "$FIX" add -A
+git -C "$FIX" -c user.name=fixture -c user.email=fixture@example.invalid commit -qm base
+git -C "$FIX" tag base
+if ! run make build; then
+  cat "$LOG"
+  echo "api-check-selftest: the fixture's base does not build"
+  exit 2
+fi
+if ! run make api-check; then
+  cat "$LOG"
+  echo "api-check-selftest: the fixture's base report is not current"
+  exit 2
+fi
+echo "api-check-selftest: fixture at $FIX (PublicApiAnalyzers $analyzers_version)"
+
+# ---- Check 1: the report is current -------------------------------------------------
+
+c="check 1: an added public member with a stale report fails the build with RS0016"
+reset_fixture
+mutate '        public static string Echo(string text) => text;' \
+  $'        public static string Echo(string text) => text;\n        public static int Extra() => 0;'
+if run make build; then not_ok "$c" "make build passed"
+elif ! grep -q 'RS0016' "$LOG"; then not_ok "$c" "no RS0016 in the output"
+else ok "$c"; fi
+
+c="check 1: a removed public member with a stale report fails the build with RS0017"
+reset_fixture
+mutate '        public static int Sub(int a, int b) => a - b;' ''
+if run make build; then not_ok "$c" "make build passed"
+elif ! grep -q 'RS0017' "$LOG"; then not_ok "$c" "no RS0017 in the output"
+else ok "$c"; fi
+
+c="check 1: make api-check fails on a stale report and names the report"
+reset_fixture
+mutate '        public static string Echo(string text) => text;' \
+  $'        public static string Echo(string text) => text;\n        public static int Extra() => 0;'
+if run make api-check; then not_ok "$c" "make api-check passed"
+elif ! grep -q 'PublicAPI.Unshipped.txt' "$LOG"; then not_ok "$c" "the output does not name PublicAPI.Unshipped.txt"
+else ok "$c"; fi
+
+c="check 1: the stale-report message names the update command (a make target)"
+reset_fixture
+mutate '        public static string Echo(string text) => text;' \
+  $'        public static string Echo(string text) => text;\n        public static int Extra() => 0;'
+run make build
+cp "$LOG" "$WORK/build.log"
+run make api-check
+cat "$WORK/build.log" >>"$LOG"
+# Lines that start with "make" are make's own status lines, not the checks' messages.
+if grep -v '^make' "$LOG" | grep -Eq '\bmake [a-z][a-z-]*'; then
+  ok "$c"
+else
+  not_ok "$c" "neither the build nor make api-check names a make target to run"
+fi
+
+c="check 1: the update command removes a deleted member from the report"
+reset_fixture
+mutate '        public static int Sub(int a, int b) => a - b;' ''
+run make api-update
+if ! run make build; then not_ok "$c" "make build still fails after make api-update"
+elif grep -q 'Sub(int a, int b)' "$LIB/PublicAPI.Unshipped.txt"; then
+  not_ok "$c" "PublicAPI.Unshipped.txt still lists Sub"
+else ok "$c"; fi
+
+c="check 1: the update command records the removal of a shipped member (*REMOVED*)"
+reset_fixture
+grep 'Calc.Sub(' "$LIB/PublicAPI.Unshipped.txt" >>"$LIB/PublicAPI.Shipped.txt"
+sed -i '/Calc\.Sub(/d' "$LIB/PublicAPI.Unshipped.txt"
+mutate '        public static int Sub(int a, int b) => a - b;' ''
+run make api-update
+if ! run make build; then not_ok "$c" "make build still fails after make api-update"
+elif ! grep -q 'Calc.Sub(' "$LIB/PublicAPI.Shipped.txt"; then not_ok "$c" "the shipped line was deleted"
+elif ! grep -q '^\*REMOVED\*static Fixture.Api.Calc.Sub(int a, int b) -> int$' "$LIB/PublicAPI.Unshipped.txt"; then
+  cp "$LIB/PublicAPI.Unshipped.txt" "$LOG"
+  not_ok "$c" "PublicAPI.Unshipped.txt has no *REMOVED* line for Sub"
+else ok "$c"; fi
+
+c="check 1: a nullability change (string to string?) shows in the report"
+reset_fixture
+mutate 'public static string Echo(string text) => text;' 'public static string? Echo(string? text) => text;'
+if run make build; then
+  not_ok "$c" "make build passed with the old signature in the report"
+else
+  run make api-check
+  if git -C "$FIX" diff -- src/Fixture.Api/PublicAPI.Unshipped.txt | grep -q '^+.*Echo(string? text) -> string?'; then
+    ok "$c"
+  else
+    git -C "$FIX" diff -- src/Fixture.Api/PublicAPI.Unshipped.txt >"$LOG"
+    not_ok "$c" "the regenerated report has no 'Echo(string? text) -> string?' line"
+  fi
+fi
+
+c="check 1: a missing report fails"
+reset_fixture
+rm "$LIB/PublicAPI.Shipped.txt" "$LIB/PublicAPI.Unshipped.txt"
+if run make build && run make api-check; then not_ok "$c" "make build and make api-check both passed"
+else ok "$c"; fi
+
+c="check 1: an unreadable report fails"
+reset_fixture
+chmod 000 "$LIB/PublicAPI.Unshipped.txt"
+if run make build && run make api-check; then not_ok "$c" "make build and make api-check both passed"
+else ok "$c"; fi
+chmod u+rw "$LIB/PublicAPI.Unshipped.txt"
+
+# ---- Check 2: a breaking change is declared -----------------------------------------
+
+compat() { run env "$@" scripts/api-compat.sh base; }
+
+# <kind> <old text> <new text> [<finding>]: undeclared it fails with a compatibility
+# finding (with <finding>, for example "error CPX002", that one); declared by the title
+# (feat!:) or with API_COMPATIBLE=true it passes and says it accepted it.
+breaking() {
+  local kind="$1" finding="${4:-}"
+  reset_fixture
+  mutate "$2" "$3"
+  update_report
+  c="check 2: $kind fails undeclared"
+  compat API_COMPATIBLE=
+  status=$?
+  if [ "$status" -ne 1 ]; then not_ok "$c" "exit status $status, expected 1"
+  elif ! grep -q 'breaking changes in: Fixture.Api' "$LOG"; then not_ok "$c" "Fixture.Api is not reported as breaking"
+  elif [ -n "$finding" ] && ! grep -q "$finding" "$LOG"; then not_ok "$c" "no '$finding' in the output"
+  else ok "$c"; fi
+  if [ "$status" -ne 1 ]; then
+    # Nothing was detected, so there is no break to accept: one failure, not three.
+    echo "skip - check 2: $kind passes when declared: the break was not detected undeclared"
+    return
+  fi
+  declared "check 2: $kind passes when the title declares it (feat!:)" PR_TITLE='feat!: change the API'
+  declared "check 2: $kind passes with the api-compatible label (API_COMPATIBLE=true)" API_COMPATIBLE=true
+}
+
+# <case> <env assignments...>: the check passes and says it accepted the break.
+declared() {
+  local c="$1"
+  shift
+  compat "$@"
+  local status=$?
+  if [ "$status" -ne 0 ]; then not_ok "$c" "exit status $status, expected 0"
+  elif ! grep -q 'accepted' "$LOG"; then not_ok "$c" "the output does not say the break was accepted"
+  else ok "$c"; fi
+}
+
+breaking "a removed name" \
+  '        public static int Sub(int a, int b) => a - b;' ''
+breaking "a renamed name" \
+  'public class Widget' 'public class Gadget'
+breaking "a removed parameter" \
+  'Drop(int x, int y) => x + y;' 'Drop(int x) => x;'
+breaking "a renamed parameter" \
+  'Add(int a, int b) => a + b;' 'Add(int left, int b) => left + b;'
+breaking "a moved parameter" \
+  'Move(string first, int second) => first + second;' 'Move(int second, string first) => first + second;'
+breaking "an added required parameter" \
+  'Twice(int x) => 2 * x;' 'Twice(int x, int y) => (2 * x) + y;'
+breaking "an optional parameter that becomes required" \
+  'Scale(int x, int factor = 2)' 'Scale(int x, int factor)'
+breaking "a parameter type that accepts less" \
+  'Describe(object value)' 'Describe(string value)'
+breaking "a return type that can hold more" \
+  'public static string Label(string text) => text;' 'public static object Label(string text) => text;'
+breaking "a removed member of a public class" \
+  $'\n        public int Size { get; set; }\n' $'\n'
+breaking "a member that becomes required" \
+  'public string Name { get; init; } = "";' 'public required string Name { get; init; }' 'error CPX002'
+# A struct has no constructor in metadata, but `new Point()` always compiles.
+breaking "a member of a public struct that becomes required" \
+  'public int X { get; set; }' 'public required int X { get; set; }' 'error CPX002'
+breaking "a changed parameter default" \
+  'string greeting = "Hello"' 'string greeting = "Hi"' 'error CPX001'
+# A default with a comma inside brackets is one value, so the parameters after it are
+# still compared.
+breaking "a changed default after a default(KeyValuePair<int, string>)" \
+  'int count = 1' 'int count = 2' 'error CPX001'
+breaking "a default(KeyValuePair<int, string>) parameter that becomes required" \
+  'Entry(KeyValuePair<int, string> entry = default(KeyValuePair<int, string>))' \
+  'Entry(KeyValuePair<int, string> entry)' 'error CPX001'
+
+c="check 2: an added name passes undeclared"
+reset_fixture
+mutate '        public static string Echo(string text) => text;' \
+  $'        public static string Echo(string text) => text;\n        public static int Extra() => 0;'
+update_report
+if ! compat API_COMPATIBLE=; then not_ok "$c" "api-compat.sh failed"
+elif ! grep -q 'no breaking changes' "$LOG"; then not_ok "$c" "the output does not say 'no breaking changes'"
+else ok "$c"; fi
+
+c="check 2: a value other than true (another label) does not pass a break"
+reset_fixture
+mutate '        public static int Sub(int a, int b) => a - b;' ''
+update_report
+compat API_COMPATIBLE=false
+status=$?
+if [ "$status" -ne 1 ]; then not_ok "$c" "exit status $status, expected 1"
+else ok "$c"; fi
+
+# Titles: a scope before the ! also declares a break; a title without ! does not, nor
+# does a ! that is not right before the colon.
+reset_fixture
+mutate '        public static int Sub(int a, int b) => a - b;' ''
+update_report
+declared "check 2: a title with a scope and ! (fix(client)!:) declares a break" PR_TITLE='fix(client)!: remove Sub'
+for title in 'feat: remove Sub' 'feat: remove Sub!' 'feat(!): remove Sub'; do
+  c="check 2: the title '$title' does not declare a break"
+  compat PR_TITLE="$title"
+  status=$?
+  if [ "$status" -ne 1 ]; then not_ok "$c" "exit status $status, expected 1"
+  else ok "$c"; fi
+done
+
+c="check 2: a package that is no longer packed fails"
+reset_fixture
+sed -i 's|<IsPackable>true</IsPackable>|<IsPackable>false</IsPackable>|' "$LIB/Fixture.Api.csproj"
+compat API_COMPATIBLE=
+status=$?
+if [ "$status" -ne 1 ]; then not_ok "$c" "exit status $status, expected 1"
+elif ! grep -q 'Fixture.Api: no longer packed' "$LOG"; then not_ok "$c" "the output does not say the package is no longer packed"
+else ok "$c"; fi
+
+# ---- The CI wiring of check 2 -------------------------------------------------------
+
+WORKFLOW="$ROOT/.github/workflows/api-compatibility.yml"
+c="check 2 in CI: only the api-compatible label sets API_COMPATIBLE"
+grep -n 'API_COMPATIBLE' "$WORKFLOW" >"$LOG"
+if grep -Fq "API_COMPATIBLE: \${{ contains(github.event.pull_request.labels.*.name, 'api-compatible') }}" "$WORKFLOW"; then ok "$c"
+else not_ok "$c" "the workflow does not set API_COMPATIBLE from the api-compatible label"; fi
+
+c="check 2 in CI: the PR title reaches the check, through the environment"
+grep -n 'title' "$WORKFLOW" >"$LOG" || true
+if grep -Fq "PR_TITLE: \${{ github.event.pull_request.title }}" "$WORKFLOW"; then ok "$c"
+else not_ok "$c" "the workflow does not set PR_TITLE from the pull request title, so a declared break (feat!:) still fails"; fi
+
+c="check 2 in CI: editing the PR title re-runs the check"
+grep -n 'types:' "$WORKFLOW" >"$LOG" || true
+if grep -Eq '^ *types: \[.*\bedited\b.*\]' "$WORKFLOW"; then ok "$c"
+else not_ok "$c" "the workflow does not run on the edited event"; fi
+
+echo
+echo "api-check-selftest: ${passed} passed, ${#failed[@]} failed"
+[ "${#failed[@]}" -eq 0 ]

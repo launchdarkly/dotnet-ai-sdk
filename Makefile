@@ -1,0 +1,104 @@
+# Developer and CI entry points. CI runs the same targets, so a green `make` run
+# locally means the same checks pass in CI (apart from the Windows and macOS legs).
+
+SOLUTION := LaunchDarkly.AI.Server.sln
+CONFIGURATION ?= Release
+DOTNET ?= dotnet
+# The public API files that api-check keeps in sync with the code (a git pathspec).
+PUBLIC_API_PATHSPEC := 'src/*/PublicAPI.*.txt'
+
+.PHONY: build test lint format format-check api-update api-check api-check-selftest api-compat docs examples pack pack-check clean restore tools
+
+restore:
+	$(DOTNET) restore $(SOLUTION)
+
+tools:
+	$(DOTNET) tool restore
+
+# Release build of every project. Warnings are errors, including an unrecorded
+# public API change (RS0016/RS0017). Without LaunchDarkly.snk the libraries are
+# public-signed.
+build: restore
+	@$(DOTNET) build $(SOLUTION) --no-restore -c $(CONFIGURATION) -warnaserror || { \
+		echo "The build failed. If the errors above include RS0016 or RS0017, the public API files (PublicAPI.Shipped.txt / PublicAPI.Unshipped.txt) do not match the code: run \`make api-update\`, review the diff and commit it."; \
+		exit 1; }
+
+# Unit tests run against the Debug build (not strong-named), as in CI.
+# TESTFRAMEWORK=net8.0 limits the run to one target framework.
+test: restore
+	$(DOTNET) test $(SOLUTION) --no-restore -c Debug --blame-hang-timeout 60s
+
+# Analyzer diagnostics (code quality and public API rules), without changing files.
+lint: restore
+	$(DOTNET) format analyzers $(SOLUTION) --no-restore --verify-no-changes --severity warn
+
+# Apply whitespace and code-style fixes.
+format: restore
+	$(DOTNET) format whitespace $(SOLUTION) --no-restore
+	$(DOTNET) format style $(SOLUTION) --no-restore --severity warn
+
+# Fail if `make format` would change anything.
+format-check: restore
+	$(DOTNET) format whitespace $(SOLUTION) --no-restore --verify-no-changes
+	$(DOTNET) format style $(SOLUTION) --no-restore --verify-no-changes --severity warn
+
+# Update the PublicAPI.*.txt files from the code: add each new public symbol (RS0016)
+# and remove each one that is gone (RS0017). Review the diff and commit it.
+api-update: restore
+	scripts/api-update.sh
+
+# Run api-update and fail if the PublicAPI.*.txt files then differ from what is
+# committed. A new public member belongs in PublicAPI.Unshipped.txt.
+api-check: api-update
+	@# git status rather than git diff, so a PublicAPI file the fixer creates
+	@# (untracked, for example in a new package) fails the check too.
+	@changes="$$(git status --porcelain --untracked-files=all -- $(PUBLIC_API_PATHSPEC))"; \
+	if [ -n "$$changes" ]; then \
+		echo "$$changes"; \
+		git --no-pager diff -- $(PUBLIC_API_PATHSPEC); \
+		echo "The public API files listed above do not match the code. Run \`make api-update\` (this run has already updated them in the working tree), review the diff and commit it if the change is intended."; \
+		exit 1; \
+	fi
+
+# Self-test of the public API checks (make build / make api-check, and api-compat.sh)
+# against a fixture library in a temporary git repository, not the real packages.
+api-check-selftest: tools
+	scripts/api-check-selftest.sh
+
+# Breaking-change check of the public API against a git ref (default: main), with
+# ApiCompat (pinned in .config/dotnet-tools.json). The ref is built in a temporary
+# worktree; the working tree is the new side. API_COMPATIBLE=true accepts an intended
+# break, as the api-compatible pull-request label does in CI.
+BASE ?= main
+api-compat: tools
+	scripts/api-compat.sh $(BASE)
+
+# API reference docs with docfx (pinned in .config/dotnet-tools.json). Output goes to docs/.
+docs: tools
+	$(DOTNET) tool run docfx docfx.json
+
+# Run the example scenarios offline (LD_SDK_KEY unset): the agent and history success
+# cases must exit 0, and the missing-flag case must exit 1. Responses go to output/.
+EXAMPLES_RUN := env -u LD_SDK_KEY $(DOTNET) run --project examples --no-build -c Debug --
+examples: restore
+	$(DOTNET) build examples --no-restore -c Debug
+	$(EXAMPLES_RUN) agent launch-darkly-documentation-summarizer "What is a feature flag?"
+	$(EXAMPLES_RUN) history launch-darkly-documentation-summarizer "What did I say matters to me?"
+	@if $(EXAMPLES_RUN) agent doesnt-exist "hi"; then \
+		echo "examples: the missing-flag case exited 0; expected 1"; exit 1; \
+	else \
+		status=$$?; test $$status -eq 1 || { echo "examples: the missing-flag case exited $$status; expected 1"; exit 1; }; \
+	fi
+
+pack: build
+	$(DOTNET) pack $(SOLUTION) --no-build -c $(CONFIGURATION) -o nupkgs
+
+# Packaging check: pack into a local feed, install each package into a fresh console
+# project from that feed plus nuget.org, build and run it. Fails on a missing or
+# undeclared dependency, and checks the metapackage carries no assembly.
+pack-check:
+	scripts/pack-check.sh
+
+clean:
+	$(DOTNET) clean $(SOLUTION)
+	rm -rf nupkgs api docs output
