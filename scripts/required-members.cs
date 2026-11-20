@@ -6,7 +6,10 @@
 // Output, one per line, sorted:
 //   type <Type>             a public type
 //   constructible <Type>    a public type that callers can construct: a public or
-//                           protected constructor without [SetsRequiredMembers]
+//                           protected constructor without [SetsRequiredMembers], or a
+//                           struct (`new S()` always compiles, through the implicit
+//                           parameterless constructor that metadata does not list, unless
+//                           the struct declares one with [SetsRequiredMembers])
 //   required <Type>.<Name>  a public required property or field
 using System;
 using System.Collections.Generic;
@@ -32,14 +35,31 @@ foreach (var handle in md.TypeDefinitions)
     var name = TypeName(handle);
     lines.Add($"type {name}");
     var isStatic = type.Attributes.HasFlag(TypeAttributes.Abstract) && type.Attributes.HasFlag(TypeAttributes.Sealed);
+    var isStruct = IsStruct(type);
+    var setsRequiredWithoutArguments = false;
     foreach (var m in type.GetMethods().Select(md.GetMethodDefinition))
     {
+        if (md.GetString(m.Name) != ".ctor")
+        {
+            continue;
+        }
+
+        var setsRequired = HasAttribute(m.GetCustomAttributes(), "SetsRequiredMembersAttribute");
+        if (setsRequired && ParameterCount(m) == 0)
+        {
+            setsRequiredWithoutArguments = true;
+        }
+
         var access = m.Attributes & MethodAttributes.MemberAccessMask;
-        if (!isStatic && md.GetString(m.Name) == ".ctor" && IsCallerAccess(access)
-            && !HasAttribute(m.GetCustomAttributes(), "SetsRequiredMembersAttribute"))
+        if (!isStatic && IsCallerAccess(access) && !setsRequired)
         {
             lines.Add($"constructible {name}");
         }
+    }
+
+    if (isStruct && !setsRequiredWithoutArguments)
+    {
+        lines.Add($"constructible {name}");
     }
 
     foreach (var p in type.GetProperties().Select(md.GetPropertyDefinition))
@@ -82,6 +102,32 @@ bool IsVisible(TypeDefinition type)
 
     return visibility is TypeAttributes.NestedPublic or TypeAttributes.NestedFamily or TypeAttributes.NestedFamORAssem
         && IsVisible(md.GetTypeDefinition(type.GetDeclaringType()));
+}
+
+// A struct derives directly from System.ValueType (an enum from System.Enum, and an enum
+// has no members that can be required).
+bool IsStruct(TypeDefinition type)
+{
+    var baseType = type.BaseType;
+    if (baseType.Kind != HandleKind.TypeReference)
+    {
+        return false;
+    }
+
+    var reference = md.GetTypeReference((TypeReferenceHandle)baseType);
+    return md.GetString(reference.Namespace) == "System" && md.GetString(reference.Name) == "ValueType";
+}
+
+int ParameterCount(MethodDefinition method)
+{
+    var blob = md.GetBlobReader(method.Signature);
+    var header = blob.ReadSignatureHeader();
+    if (header.IsGeneric)
+    {
+        blob.ReadCompressedInteger();
+    }
+
+    return blob.ReadCompressedInteger();
 }
 
 string TypeName(TypeDefinitionHandle handle)

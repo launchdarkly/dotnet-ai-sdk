@@ -123,6 +123,11 @@ namespace Fixture.Api
 
         public int Size { get; set; }
     }
+
+    public struct Point
+    {
+        public int X { get; set; }
+    }
 }
 EOF
 printf '#nullable enable\n' >"$LIB/PublicAPI.Shipped.txt"
@@ -244,10 +249,11 @@ chmod u+rw "$LIB/PublicAPI.Unshipped.txt"
 
 compat() { run env "$@" scripts/api-compat.sh base; }
 
-# <kind> <old text> <new text>: undeclared it fails with a compatibility finding; declared
-# by the title (feat!:) or with API_COMPATIBLE=true it passes and says it accepted it.
+# <kind> <old text> <new text> [<finding>]: undeclared it fails with a compatibility
+# finding (with <finding>, for example "error CPX002", that one); declared by the title
+# (feat!:) or with API_COMPATIBLE=true it passes and says it accepted it.
 breaking() {
-  local kind="$1"
+  local kind="$1" finding="${4:-}"
   reset_fixture
   mutate "$2" "$3"
   update_report
@@ -256,6 +262,7 @@ breaking() {
   status=$?
   if [ "$status" -ne 1 ]; then not_ok "$c" "exit status $status, expected 1"
   elif ! grep -q 'breaking changes in: Fixture.Api' "$LOG"; then not_ok "$c" "Fixture.Api is not reported as breaking"
+  elif [ -n "$finding" ] && ! grep -q "$finding" "$LOG"; then not_ok "$c" "no '$finding' in the output"
   else ok "$c"; fi
   if [ "$status" -ne 1 ]; then
     # Nothing was detected, so there is no break to accept: one failure, not three.
@@ -298,7 +305,10 @@ breaking "a return type that can hold more" \
 breaking "a removed member of a public class" \
   $'\n        public int Size { get; set; }\n' $'\n'
 breaking "a member that becomes required" \
-  'public string Name { get; init; } = "";' 'public required string Name { get; init; }'
+  'public string Name { get; init; } = "";' 'public required string Name { get; init; }' 'error CPX002'
+# A struct has no constructor in metadata, but `new Point()` always compiles.
+breaking "a member of a public struct that becomes required" \
+  'public int X { get; set; }' 'public required int X { get; set; }' 'error CPX002'
 breaking "a changed parameter default" \
   'string greeting = "Hello"' 'string greeting = "Hi"'
 
