@@ -6,7 +6,7 @@
     <AssemblyName>LaunchDarkly.AI.Server.ExtensionsAI</AssemblyName>
     <PackageId>LaunchDarkly.AI.Server.ExtensionsAI</PackageId>
     <RootNamespace>LaunchDarkly.AI.Server.ExtensionsAI</RootNamespace>
-    <Description>Microsoft.Extensions.AI (IChatClient) provider for the LaunchDarkly AI SDK for .NET.</Description>
+    <Description>Microsoft.Extensions.AI (IChatClient) provider for the LaunchDarkly AI SDK for .NET. Pre-1.0 beta for testing; APIs may change before 1.0.</Description>
   </PropertyGroup>
 
   <ItemGroup>

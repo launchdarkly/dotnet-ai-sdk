@@ -3,14 +3,14 @@
 The core of the LaunchDarkly AI SDK for .NET (server-side).
 
 > [!CAUTION]
-> **Pre-1.0 working version, not yet published to NuGet; build from source.**
-> The API may change at any point before 1.0. The first NuGet release will be 1.0.
+> **Pre-1.0 beta for testing. APIs may change before 1.0.**
+> 0.x beta versions will be published to NuGet; none is published yet. Until the first release, build from source and install from a local `dotnet pack` feed.
 
 This package evaluates [AI Configs](https://docs.launchdarkly.com/home/ai-configs) for a LaunchDarkly context, runs them through a provider handler, and tracks the result (duration, tokens, success or error, tool calls) as LaunchDarkly events and `System.Diagnostics` activities. It calls no model itself: a handler does, such as the `IChatClient` handler in [`LaunchDarkly.AI.Server.ExtensionsAI`](https://github.com/launchdarkly/dotnet-ai-sdk/tree/main/src/LaunchDarkly.AI.Server.ExtensionsAI).
 
 ## Install
 
-Build the packages from source (see the [repository README](https://github.com/launchdarkly/dotnet-ai-sdk#building-from-source)), then add the package from the local feed:
+Once a 0.x beta is published to NuGet, add it with `dotnet add package LaunchDarkly.AI.Server` (pin the exact version: a 0.x minor release can change the API). Until then, build the packages from source (see the [repository README](https://github.com/launchdarkly/dotnet-ai-sdk#building-from-source)) and add the package from the local feed:
 
 ```bash
 dotnet add package LaunchDarkly.AI.Server --source /path/to/dotnet-ai-sdk/nupkgs
@@ -197,7 +197,7 @@ It throws `AiConfigNotFoundException` when the flag has no variation for the con
 
 ## Migration notes
 
-None yet: this is the first working version.
+None yet: 0.1.0 is the first beta.
 
 ## Supported .NET versions
 

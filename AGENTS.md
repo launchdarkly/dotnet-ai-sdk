@@ -7,12 +7,13 @@ follow .NET idiom (see [Language idioms](#language-idioms)).
 
 ## Status
 
-Pre-1.0 working version. Nothing is published to NuGet before 1.0; each feature
-bumps the working version (0.1.0, 0.2.0, ...) in its own pull request. The 0.1.0
-working version runs messages-mode AI Configs through an `IChatClient`, blocking
-(no streaming), with tools, history, structured output, tracking and spans. Agent
-mode, streaming, graphs, judges and the OpenTelemetry setup package are not in
-.NET yet. The README's "What works so far" is the user-facing list.
+Pre-1.0 beta for testing; APIs may change before 1.0. 0.x versions are released
+to NuGet as betas (none is published yet; until the first release, build from
+source or use a local `dotnet pack` feed). The 0.1.0 beta runs messages-mode AI
+Configs through an `IChatClient`, blocking (no streaming), with tools, history,
+structured output, tracking and spans. Agent mode, streaming, graphs, judges and
+the OpenTelemetry setup package are not in .NET yet. The README's "What works so
+far" is the user-facing list.
 
 ## Packages
 
@@ -83,7 +84,7 @@ The invariants and the invoke flow are in the core package's [agents.md](src/Lau
 
 ## Agent graphs
 
-Not in .NET yet: there is no `Graph()`, `GraphDefinition` or `ResolveGraph`, and `ConfigArgs.Registry` is the only place a registry is passed. They arrive with a later working version.
+Not in .NET yet: there is no `Graph()`, `GraphDefinition` or `ResolveGraph`, and `ConfigArgs.Registry` is the only place a registry is passed. They arrive with a later 0.x release.
 
 ## Repository layout
 
@@ -130,21 +131,26 @@ does the same for the libraries. The pre-commit hook (`lefthook.yml`) runs
 
 - Every public member is listed in the package's `PublicAPI.Unshipped.txt`. The
   build fails on a public change that isn't recorded (RS0016/RS0017); `make api-update`
-  records it. At 1.0 the release moves the entries to `PublicAPI.Shipped.txt`.
+  records it. The entries stay in `PublicAPI.Unshipped.txt` through the 0.x betas; at 1.0
+  the release moves them to `PublicAPI.Shipped.txt`.
 - Every public member has an XML doc comment; missing or invalid docs fail the build.
 - Breaking changes against the base branch fail the API compatibility check
   (`make api-compat`, and a CI job on every pull request) unless the pull request
   title declares the break with `!` (`feat!: ...`) or a maintainer applied the
   `api-compatible` label to a flagged change they judge compatible. Checks against the last release (package
-  validation) start after 1.0, the first published version.
+  validation) start after 1.0, the first stable version.
 - Deprecate with `[Obsolete("Use X.")]`, never by removing a shipped member.
 
 ## Versioning and release
 
-- The csproj `Version` of each package and `SdkInfo.Version` move together. They
-  are `0.1.0`, the first working version; each feature pull request sets the next 0.x working version.
-- No NuGet push, GitHub release or version tag before 1.0. release-please runs
-  only when dispatched by hand, and its first run is the 1.0 release.
+- The csproj `Version` of each package, `SdkInfo.Version` and `PackageInfo.Version`
+  move together, and release-please sets them in each release PR; don't bump them by
+  hand. They are `0.1.0`, the first beta.
+- 0.x releases are pre-1.0 betas for testing. Each push to `main` runs release-please,
+  which opens or updates a release PR from the conventional commits (`initial-version`
+  0.1.0, then `bump-minor-pre-major`: a `feat` bumps the minor version, a `fix` the
+  patch). Merging it tags `vX.Y.Z`, creates the GitHub release and calls the release
+  workflow.
 - The release workflow strong-names the assemblies with the shared key, signs them
   with Authenticode, packs, attests provenance and pushes to NuGet behind a
   protected environment. The repository settings this needs are listed in

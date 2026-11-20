@@ -6,7 +6,7 @@
     <Version>0.1.0</Version>
     <!--x-release-please-end-->
     <PackageId>LaunchDarkly.AI</PackageId>
-    <Description>LaunchDarkly AI SDK for .NET. Convenience package that references LaunchDarkly.AI.Server.</Description>
+    <Description>LaunchDarkly AI SDK for .NET. Convenience package that references LaunchDarkly.AI.Server. Pre-1.0 beta for testing; APIs may change before 1.0.</Description>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <IncludeSymbols>false</IncludeSymbols>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>

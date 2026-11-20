@@ -52,7 +52,7 @@ Release builds are strong-named. Without the private key (`LaunchDarkly.snk`, wh
 
 ## For maintainers: repository settings
 
-These are set in the GitHub repository and on nuget.org, not in code. They are needed before the first release (1.0); nothing is published before then.
+These are set in the GitHub repository and on nuget.org, not in code. They are needed before the first release (the first 0.x beta, published when its release PR is merged).
 
 - **`nuget-publish` environment** (Settings → Environments): required reviewers from the SDK maintainers, deployments limited to the `main` branch and release tags. The NuGet push job in `release.yml` runs only in this environment, so every push to NuGet waits for an approval.
 - **NuGet trusted publishing** (nuget.org, under the publishing account): a trusted-publisher policy for the repository `launchdarkly/dotnet-ai-sdk` and workflow file `release.yml`, covering the packages `LaunchDarkly.AI.Server`, `LaunchDarkly.AI.Server.ExtensionsAI` and `LaunchDarkly.AI`. Leave the policy's environment empty: every release run, dry runs included, logs in from the build job (outside the environment) to check the policy early, and only the push job, inside `nuget-publish`, uses the key. The workflow logs in with the `NUGET_USER` repository variable through OIDC; no API key is stored.

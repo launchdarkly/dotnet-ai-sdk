@@ -3,12 +3,12 @@
 A provider for the LaunchDarkly AI SDK for .NET that runs AI Configs through any [`Microsoft.Extensions.AI`](https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai) `IChatClient`: OpenAI, Azure OpenAI, Anthropic, Ollama, Amazon Bedrock and others that have an `IChatClient` adapter.
 
 > [!CAUTION]
-> **Pre-1.0 working version, not yet published to NuGet; build from source.**
-> The API may change at any point before 1.0. The first NuGet release will be 1.0.
+> **Pre-1.0 beta for testing. APIs may change before 1.0.**
+> 0.x beta versions will be published to NuGet; none is published yet. Until the first release, build from source and install from a local `dotnet pack` feed.
 
 ## Install
 
-Build the packages from source (see the [repository README](https://github.com/launchdarkly/dotnet-ai-sdk#building-from-source)), then add the package from the local feed:
+Once a 0.x beta is published to NuGet, add it with `dotnet add package LaunchDarkly.AI.Server.ExtensionsAI` (pin the exact version: a 0.x minor release can change the API). Until then, build the packages from source (see the [repository README](https://github.com/launchdarkly/dotnet-ai-sdk#building-from-source)) and add the package from the local feed:
 
 ```bash
 dotnet add package LaunchDarkly.AI.Server.ExtensionsAI --source /path/to/dotnet-ai-sdk/nupkgs
@@ -131,7 +131,7 @@ On .NET 8.0 and .NET Standard 2.0, `Microsoft.Extensions.AI` 10.11.0 brings in `
 
 ## Migration notes
 
-None yet: this is the first working version.
+None yet: 0.1.0 is the first beta.
 
 ## Supported .NET versions
 

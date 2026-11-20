@@ -6,4 +6,4 @@ API reference for the LaunchDarkly AI SDK for .NET.
 - `LaunchDarkly.AI.Server.ExtensionsAI`: the `Microsoft.Extensions.AI` (`IChatClient`) provider.
 - `LaunchDarkly.AI`: a convenience package that references `LaunchDarkly.AI.Server`. It has no API of its own.
 
-This is a pre-1.0 working version and is not yet published to NuGet. See the [README](https://github.com/launchdarkly/dotnet-ai-sdk#readme) to build it from source.
+This is a pre-1.0 beta for testing; APIs may change before 1.0. 0.x beta versions will be published to NuGet; none is published yet. Until the first release, see the [README](https://github.com/launchdarkly/dotnet-ai-sdk#readme) to build it from source.

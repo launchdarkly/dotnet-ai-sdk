@@ -1,8 +1,8 @@
 # LaunchDarkly AI SDK for .NET
 
 > [!CAUTION]
-> **Pre-1.0 working version, not yet published to NuGet; build from source.**
-> The API may change at any point before 1.0. The first NuGet release will be 1.0.
+> **Pre-1.0 beta for testing. APIs may change before 1.0.**
+> 0.x beta versions will be published to NuGet; none is published yet. Until the first release, build from source and install from a local `dotnet pack` feed.
 
 The LaunchDarkly AI SDK for .NET lets server-side .NET applications use [AI Configs](https://docs.launchdarkly.com/home/ai-configs): manage prompts, models and tools in LaunchDarkly, target and roll them out per context, and track cost, latency and errors.
 
@@ -17,7 +17,7 @@ The LaunchDarkly AI SDK for .NET lets server-side .NET applications use [AI Conf
 
 ## What works so far
 
-This working version supports messages-mode AI Configs through an `IChatClient`, without streaming:
+This beta (0.1.0) supports messages-mode AI Configs through an `IChatClient`, without streaming:
 
 - **Initialization:** lazy from `LD_SDK_KEY` on the first call, explicit with `InitOptions` (SDK key, base URIs, start wait time), or with a LaunchDarkly client you built yourself. `LdAi.ShutdownAsync` flushes and closes it.
 - **`LdAi.Config(...).InvokeAsync(...)`:** evaluates the AI Config for a context, selects the handler for the variation's provider and mode, renders `{{...}}` template variables, passes text history and the variation's tools, tracks duration, token usage, success or error and each tool call, and returns the response with its usage and tracking data.
@@ -27,7 +27,7 @@ This working version supports messages-mode AI Configs through an `IChatClient`,
 - **`LdAi.InspectConfigAsync`**, **`LdAi.ParseTemplate`** and **`LdAi.CreateHandler`** for custom handlers.
 - **Spans** through the `LaunchDarkly.AI.Server` `ActivitySource` (see [Telemetry](#telemetry)).
 
-Not yet in .NET: streaming, agent-mode handlers, agent graphs, judges (a variation with a judge configuration runs no judge and logs one warning per config key), conversation IDs and the OpenTelemetry setup package. Each arrives in a later working version.
+Not yet in .NET: streaming, agent-mode handlers, agent graphs, judges (a variation with a judge configuration runs no judge and logs one warning per config key), conversation IDs and the OpenTelemetry setup package. Each arrives in a later 0.x release.
 
 <!-- experimental-features:start (generated; do not edit by hand) -->
 Experimental features: None.
@@ -35,7 +35,7 @@ Experimental features: None.
 
 ## Quick start
 
-Build the packages from source and add them to your application from the local feed (see [Building from source](#building-from-source)):
+Once a 0.x beta is published to NuGet, add it with `dotnet add package LaunchDarkly.AI.Server.ExtensionsAI` (pin the exact version: a 0.x minor release can change the API). Until then, build the packages from source and add them to your application from the local feed (see [Building from source](#building-from-source)):
 
 ```bash
 make pack

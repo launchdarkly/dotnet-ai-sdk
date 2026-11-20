@@ -1,7 +1,7 @@
 ## Verifying build provenance with GitHub artifact attestations
 
 > [!NOTE]
-> No version of this SDK is published yet. These instructions apply from the first NuGet release (1.0).
+> No version of this SDK is published yet. These instructions apply from the first NuGet release (a 0.x beta).
 
 LaunchDarkly uses [GitHub artifact attestations](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations/using-artifact-attestations-to-establish-provenance-for-builds) to help developers make their supply chain more secure by ensuring the authenticity and build integrity of our published SDK packages.
 

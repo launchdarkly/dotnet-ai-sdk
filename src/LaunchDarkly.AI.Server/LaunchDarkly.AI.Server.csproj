@@ -6,7 +6,7 @@
     <AssemblyName>LaunchDarkly.AI.Server</AssemblyName>
     <PackageId>LaunchDarkly.AI.Server</PackageId>
     <RootNamespace>LaunchDarkly.AI.Server</RootNamespace>
-    <Description>LaunchDarkly AI SDK for .NET (server-side). Manage prompts, models and tools as AI Configs, target and roll them out per context, and track cost, latency and errors.</Description>
+    <Description>LaunchDarkly AI SDK for .NET (server-side). Manage prompts, models and tools as AI Configs, target and roll them out per context, and track cost, latency and errors. Pre-1.0 beta for testing; APIs may change before 1.0.</Description>
   </PropertyGroup>
 
   <ItemGroup>
